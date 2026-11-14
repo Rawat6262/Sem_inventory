@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
+/* Colour tokens. Components use the Tailwind names on the right
+   (bg-surface, text-muted, border-line, bg-accent ...), never raw colours,
+   so the dark theme only has to redefine these values. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #f5f6f4;
+  --surface: #ffffff;
+  --surface-2: #eef0ec;
+  --ink: #1b1f1d;
+  --muted: #5d6661;
+  --line: #dfe3de;
+  --accent: #1f6f5c;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2f0eb;
+  --danger: #b4321f;
+  --danger-soft: #fbe9e5;
+  --success: #2f7a3a;
+  --success-soft: #e6f3e6;
+  --warn: #8a5a00;
+  --warn-soft: #fbf0d9;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #121514;
+    --surface: #1a1e1c;
+    --surface-2: #232825;
+    --ink: #e8ebe9;
+    --muted: #9aa49f;
+    --line: #2e3431;
+    --accent: #5cbf9f;
+    --accent-ink: #0d1f19;
+    --accent-soft: #1d3029;
+    --danger: #f08c78;
+    --danger-soft: #3a211c;
+    --success: #7fcc8a;
+    --success-soft: #1d2f20;
+    --warn: #e8b85c;
+    --warn-soft: #33290f;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
