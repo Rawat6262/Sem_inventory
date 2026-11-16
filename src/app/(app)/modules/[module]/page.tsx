@@ -4,7 +4,7 @@ import { findModule, MODULES } from "@/lib/permissions";
 import { ModulePlaceholder } from "./module-placeholder";
 
 // Modules that have their own route folder (e.g. /modules/stock) are left out.
-const BUILT = new Set(["stock", "contractor", "supervisor", "manpower", "vendor", "finance-vendor", "transport", "transaction", "outgoing", "incoming", "quotation", "employees"]);
+const BUILT = new Set(["stock", "contractor", "supervisor", "manpower", "vendor", "finance-vendor", "transport", "transaction", "outgoing", "incoming", "quotation", "employees", "reports", "activity"]);
 
 export function generateStaticParams() {
   return MODULES.filter((m) => !BUILT.has(m.key)).map((m) => ({ module: m.key }));
