@@ -1,5 +1,7 @@
 "use client";
 
+import { useMe } from "@/hooks/use-me";
+import { mayDelete } from "@/lib/permissions";
 import { ChevronRight, HardHat, Phone, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -16,6 +18,7 @@ export function ContractorsView() {
   const [editing, setEditing] = useState<Contractor | null | "new">(null);
   const [deleting, setDeleting] = useState<Contractor | null>(null);
   const remove = useContractorsMutation((id: string) => deleteContractor(id));
+  const me = useMe().data;
 
   const types = useMemo(() => [...new Set((contractors.data ?? []).map((c) => c.labour_type))].sort(), [contractors.data]);
 
@@ -137,9 +140,11 @@ export function ContractorsView() {
                               View
                               <ChevronRight className="size-3.5" aria-hidden />
                             </Link>
-                            <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(c)} aria-label={`Delete ${c.name}`}>
-                              <Trash2 className="size-3.5" aria-hidden />
-                            </Button>
+                            {me && mayDelete(me, c.createdBy) && (
+                              <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(c)} aria-label={`Delete ${c.name}`}>
+                                <Trash2 className="size-3.5" aria-hidden />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>

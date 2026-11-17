@@ -27,6 +27,7 @@ type Ref<T> = (T & { _id: string }) | null;
 
 export type Transaction = {
   _id: string;
+  createdBy?: string | null;
   exhibition: Ref<{ name: string; city?: string }>;
   exhibition_name?: string;
   category: TransactionCategory;

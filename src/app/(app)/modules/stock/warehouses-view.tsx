@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
 import { Button } from "@/components/ui";
+import { useMe } from "@/hooks/use-me";
+import { canDeleteOwned, canEditStock } from "@/lib/permissions";
 import {
   available,
   deleteWarehouse,
@@ -42,6 +44,7 @@ export function WarehousesView() {
   const [editing, setEditing] = useState<Warehouse | null | "new">(null);
   const [deleting, setDeleting] = useState<Warehouse | null>(null);
   const remove = useStockMutation((id: string) => deleteWarehouse(id));
+  const me = useMe().data;
 
   const perWarehouse = useMemo(() => {
     const map = new Map<string, Product[]>();
@@ -130,14 +133,18 @@ export function WarehousesView() {
                       )}
                     </Link>
                     <div className="flex justify-end gap-1 border-t border-line px-2 py-1.5">
-                      <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(w)}>
-                        <Pencil className="size-3.5" aria-hidden />
-                        Edit
-                      </Button>
-                      <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(w)}>
-                        <Trash2 className="size-3.5" aria-hidden />
-                        Delete
-                      </Button>
+                      {me && canEditStock(me, w.createdBy) && (
+                        <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(w)}>
+                          <Pencil className="size-3.5" aria-hidden />
+                          Edit
+                        </Button>
+                      )}
+                      {me && canDeleteOwned(me, w.createdBy) && (
+                        <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(w)}>
+                          <Trash2 className="size-3.5" aria-hidden />
+                          Delete
+                        </Button>
+                      )}
                     </div>
                   </li>
                 );

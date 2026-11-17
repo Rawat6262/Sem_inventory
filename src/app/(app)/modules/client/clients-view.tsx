@@ -5,12 +5,26 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
 import { Button } from "@/components/ui";
-import { Count, EmptyState, QueryState, SearchBox, StatTile, TableWrap, td, th } from "@/components/data-ui";
-import { clientTotals, deleteClient, fmt, fmtMoney, useClients, useClientsMutation, type Client } from "@/lib/clients";
+import { Count, EmptyState, QueryState, SearchBox, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
+import { useMe } from "@/hooks/use-me";
+import { isGrantedModule, mayDelete, ownsRecordsOnly } from "@/lib/permissions";
+import {
+  addedByName,
+  clientTotals,
+  deleteClient,
+  fmt,
+  fmtMoney,
+  useClientDirectory,
+  useClients,
+  useClientsMutation,
+  type Client,
+} from "@/lib/clients";
 import { ClientDialog } from "./_components/client-dialog";
 
 export function ClientsView() {
   const clients = useClients();
+  const me = useMe().data;
+  const ownOnly = Boolean(me && (ownsRecordsOnly(me.role) || isGrantedModule(me.role, "client", me.extraModules)));
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Client | null | "new">(null);
   const [deleting, setDeleting] = useState<Client | null>(null);
@@ -42,7 +56,7 @@ export function ClientsView() {
       {() => (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <StatTile label="Clients" value={fmt(clients.data?.length)} />
+            <StatTile label={ownOnly ? "My clients" : "Clients"} value={fmt(clients.data?.length)} />
             <StatTile label="Total deal value" value={fmtMoney(overall.deal)} />
             <StatTile label="Paid" value={fmtMoney(overall.paid)} tone="success" />
             <StatTile label="Remaining" value={fmtMoney(overall.remaining)} tone={overall.remaining > 0 ? "warn" : undefined} />
@@ -67,9 +81,10 @@ export function ClientsView() {
               <table className="w-full text-sm">
                 <thead className="border-b border-line bg-surface-2/50">
                   <tr>
-                    <th className={th}>Name</th>
                     <th className={th}>Company</th>
+                    <th className={th}>Client</th>
                     <th className={th}>Phone</th>
+                    {!ownOnly && <th className={th}>Added by</th>}
                     <th className={`${th} text-right`}>Exhibitions</th>
                     <th className={`${th} text-right`}>Deal</th>
                     <th className={`${th} text-right`}>Paid</th>
@@ -86,16 +101,17 @@ export function ClientsView() {
                       <tr key={c._id} className="hover:bg-surface-2/40">
                         <td className={td}>
                           <Link href={`/modules/client/${c._id}`} className="font-medium hover:text-accent hover:underline">
-                            {c.clientName}
+                            {c.companyName || c.clientName}
                           </Link>
                         </td>
-                        <td className={`${td} text-muted`}>{c.companyName || "—"}</td>
+                        <td className={`${td} text-muted`}>{c.clientName}</td>
                         <td className={td}>
                           <span className="inline-flex items-center gap-1 text-muted">
                             <Phone className="size-3.5" aria-hidden />
                             {c.phoneNumber}
                           </span>
                         </td>
+                        {!ownOnly && <td className={`${td} text-muted`}>{addedByName(c) ?? "—"}</td>}
                         <td className={`${td} text-right tabular-nums`}>{fmt(c.exhibition.length)}</td>
                         <td className={`${td} text-right tabular-nums`}>{fmtMoney(t.deal)}</td>
                         <td className={`${td} text-right`}>
@@ -113,9 +129,11 @@ export function ClientsView() {
                               View
                               <ChevronRight className="size-3.5" aria-hidden />
                             </Link>
-                            <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(c)} aria-label={`Delete ${c.clientName}`}>
-                              <Trash2 className="size-3.5" aria-hidden />
-                            </Button>
+                            {me && mayDelete(me, c.createdBy) && (
+                              <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(c)} aria-label={`Delete ${c.clientName}`}>
+                                <Trash2 className="size-3.5" aria-hidden />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -126,11 +144,13 @@ export function ClientsView() {
             </TableWrap>
           )}
 
+          {ownOnly && <ClientDirectory />}
+
           <ClientDialog open={editing !== null} client={editing === "new" ? null : editing} onClose={() => setEditing(null)} />
 
           <ConfirmDialog
             open={Boolean(deleting)}
-            title={`Delete ${deleting?.clientName ?? ""}?`}
+            title={`Delete ${deleting?.companyName || deleting?.clientName || ""}?`}
             confirmLabel="Delete client"
             pending={remove.isPending}
             error={remove.error?.message}
@@ -155,5 +175,58 @@ export function ClientsView() {
         </>
       )}
     </QueryState>
+  );
+}
+
+// Companies other users already work with. Only names are shown; to work with
+// one of these, ask the person who added it to share it.
+function ClientDirectory() {
+  const directory = useClientDirectory(true);
+  const [search, setSearch] = useState("");
+  const q = search.trim().toLowerCase();
+  const list = (directory.data ?? []).filter(
+    (c) => !q || c.companyName.toLowerCase().includes(q) || c.clientName.toLowerCase().includes(q) || c.addedBy?.toLowerCase().includes(q),
+  );
+
+  return (
+    <Section
+        title="Clients added by others"
+        description="Companies your colleagues already work with. To work with one, ask the person who added it to share it with you."
+      >
+        <QueryState queries={[directory]}>
+          {() =>
+            directory.data?.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted">No other users have added clients yet.</p>
+            ) : (
+              <>
+                <div className="mb-3">
+                  <SearchBox value={search} onChange={setSearch} placeholder="Search companies" />
+                </div>
+                <TableWrap>
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2/50">
+                      <tr>
+                        <th className={th}>Company</th>
+                        <th className={th}>Client</th>
+                        <th className={th}>Added by</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {list.map((c) => (
+                        <tr key={c._id}>
+                          <td className={`${td} font-medium`}>{c.companyName || "—"}</td>
+                          <td className={`${td} text-muted`}>{c.clientName}</td>
+                          <td className={`${td} text-muted`}>{c.addedBy ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {list.length === 0 && <p className="px-4 py-8 text-center text-sm text-muted">No companies match &ldquo;{search}&rdquo;.</p>}
+                </TableWrap>
+              </>
+            )
+          }
+        </QueryState>
+      </Section>
   );
 }

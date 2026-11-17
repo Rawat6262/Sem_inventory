@@ -25,9 +25,13 @@ export function LoginForm() {
     try {
       const { user } = await authApi<{ user: Me }>("login", { method: "POST", body: { gmail: gmail.trim(), password } });
       queryClient.setQueryData(ME_KEY, user);
+      setPassword("");
       router.replace(safeNext(new URLSearchParams(window.location.search).get("next")));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      // Cache Components keeps this page's state after navigating away, so a
+      // flag left on would show a stuck button on the next visit.
       setLoading(false);
     }
   }

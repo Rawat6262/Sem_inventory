@@ -29,6 +29,7 @@ export type VendorTransaction = {
 
 export type Vendor = {
   _id: string;
+  createdBy?: string | null;
   vendorName: string;
   category: string;
   phoneNo: string;

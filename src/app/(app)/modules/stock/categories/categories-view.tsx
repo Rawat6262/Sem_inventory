@@ -4,6 +4,8 @@ import { Pencil, Plus, Tags, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ConfirmDialog, Modal } from "@/components/modal";
 import { Alert, Button, Field, Input } from "@/components/ui";
+import { useMe } from "@/hooks/use-me";
+import { canDeleteOwned } from "@/lib/permissions";
 import {
   categoryName,
   deleteCategory,
@@ -23,6 +25,7 @@ export function CategoriesView() {
   const [editing, setEditing] = useState<Category | null | "new">(null);
   const [deleting, setDeleting] = useState<Category | null>(null);
   const remove = useStockMutation((id: string) => deleteCategory(id));
+  const me = useMe().data;
 
   // How many products use each category (matched by id or by name).
   const usage = useMemo(() => {
@@ -77,10 +80,12 @@ export function CategoriesView() {
                             <Pencil className="size-3.5" aria-hidden />
                             <span className="hidden sm:inline">Rename</span>
                           </Button>
-                          <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(c)} aria-label={`Delete ${c.category}`}>
-                            <Trash2 className="size-3.5" aria-hidden />
-                            <span className="hidden sm:inline">Delete</span>
-                          </Button>
+                          {me && canDeleteOwned(me, c.createdBy) && (
+                            <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(c)} aria-label={`Delete ${c.category}`}>
+                              <Trash2 className="size-3.5" aria-hidden />
+                              <span className="hidden sm:inline">Delete</span>
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

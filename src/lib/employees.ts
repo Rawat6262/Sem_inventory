@@ -37,6 +37,7 @@ export type Employee = {
   pan_card?: string;
   aadhaar_card?: string;
   photo?: string;
+  createdBy?: string | null;
 };
 
 export const LEAVE_TYPES = ["paid", "unpaid", "sick", "casual"] as const;
@@ -116,7 +117,28 @@ export const employeeKeys = {
   leave: (employeeId: string, month: number, year: number) => ["employees", "leave", employeeId, month, year] as const,
   salary: (employeeId: string) => ["employees", "salary", employeeId] as const,
   sales: (employeeId: string, year: number) => ["employees", "sales", employeeId, year] as const,
+  access: (employeeId: string) => ["employees", "access", employeeId] as const,
 };
+
+// ─── Extra module access (admin only) ──────────────────────────────────────
+
+/** The login behind an employee record and the modules granted on top of its role. */
+export type EmployeeAccess = {
+  user: { _id: string; full_name: string; gmail: string; role: string } | null;
+  extraModules: string[];
+  grantable: string[]; // modules this user's role can't open on its own
+};
+
+export function useEmployeeAccess(employeeId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: employeeKeys.access(employeeId),
+    queryFn: async () => (await api<{ data: EmployeeAccess }>(`employee/${employeeId}/access`)).data,
+    enabled: enabled && Boolean(employeeId),
+  });
+}
+
+export const saveEmployeeAccess = ({ employeeId, modules }: { employeeId: string; modules: string[] }) =>
+  api<{ data: EmployeeAccess }>(`employee/${employeeId}/access`, { method: "PUT", body: { modules } });
 
 export function useEmployees() {
   return useQuery({
@@ -210,6 +232,36 @@ export const saveEmployee = ({ id, ...input }: EmployeeInput & { id?: string }) 
   id ? api(`updateemployee/${id}`, { method: "PUT", ...buildEmployeeBody(input) }) : api("createemployee", { method: "POST", ...buildEmployeeBody(input) });
 
 export const deleteEmployee = (id: string) => api(`deleteemployee/${id}`, { method: "DELETE" });
+
+// ─── My profile (employee-role users, own record) ──────────────────────────
+
+export const profileKey = ["employees", "my-profile"] as const;
+
+export function useMyProfile(enabled: boolean) {
+  return useQuery({
+    queryKey: profileKey,
+    queryFn: async () => (await api<{ data: Employee }>("my-employee-profile")).data,
+    enabled,
+    retry: false,
+  });
+}
+
+/** What an employee may change on their own record (pay and status stay admin-only). */
+export type ProfileInput = Omit<EmployeeInput, "email" | "current_salary" | "status">;
+
+export const saveMyProfile = (input: ProfileInput) => api<{ data: Employee }>("my-employee-profile", { method: "PUT", ...buildEmployeeBody(input) });
+
+/** Profile fields still missing, so the page can nudge the employee to finish it. */
+export function missingProfileFields(e: Employee): string[] {
+  const missing: string[] = [];
+  if (!e.gender) missing.push("gender");
+  if (!e.photo) missing.push("photo");
+  if (!e.pan_card) missing.push("PAN card");
+  if (!e.aadhaar_card) missing.push("Aadhaar card");
+  const bank = e.account_details;
+  if (!bank?.account_number && !bank?.upi_id) missing.push("bank details");
+  return missing;
+}
 
 export type AddLeaveInput = { employeeId: string; month: number; year: number; date: string; leave_type: LeaveType; reason?: string };
 export const addLeaveDate = (body: AddLeaveInput) => api("enterleave/leave", { method: "POST", body });

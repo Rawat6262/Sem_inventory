@@ -6,6 +6,8 @@ import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
 import { Button, Select } from "@/components/ui";
 import { EmptyState, QueryState, SearchBox, TableWrap, td, th } from "@/components/data-ui";
+import { useMe } from "@/hooks/use-me";
+import { mayDelete } from "@/lib/permissions";
 import { deleteEmployee, EMPLOYEE_STATUSES, fmtMoney, useEmployees, useEmployeesMutation, type Employee } from "@/lib/employees";
 import { EmployeeDialog } from "./_components/employee-dialog";
 
@@ -16,6 +18,7 @@ export function EmployeesView() {
   const [editing, setEditing] = useState<Employee | null | "new">(null);
   const [deleting, setDeleting] = useState<Employee | null>(null);
   const remove = useEmployeesMutation((id: string) => deleteEmployee(id));
+  const me = useMe().data;
 
   const q = search.trim().toLowerCase();
   const list = (employees.data ?? []).filter(
@@ -99,9 +102,11 @@ export function EmployeesView() {
                           <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(e)}>
                             Edit
                           </Button>
-                          <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(e)} aria-label={`Delete ${e.name}`}>
-                            <Trash2 className="size-3.5" aria-hidden />
-                          </Button>
+                          {me && mayDelete(me, e.createdBy) && (
+                            <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(e)} aria-label={`Delete ${e.name}`}>
+                              <Trash2 className="size-3.5" aria-hidden />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

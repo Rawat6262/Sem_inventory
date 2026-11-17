@@ -27,6 +27,7 @@ export type Exhibition = {
   zipCode?: string;
   remarks?: string;
   client?: string[]; // unpopulated on the list endpoint — just ids
+  createdBy?: string | null;
   createdAt?: string;
 };
 
@@ -50,19 +51,34 @@ export type ExhibitionClientRow = {
   phoneNumber: string;
   address?: string;
   stalls: ExhibitionClientStall[];
-  totals: { total_deal_amount: number; total_paid: number; total_remaining: number };
+  totals: {
+    total_deal_amount: number;
+    total_paid: number;
+    total_remaining: number;
+  };
 };
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 const numberFormat = new Intl.NumberFormat("en-IN");
-export const fmt = (n: number | null | undefined) => numberFormat.format(n ?? 0);
+export const fmt = (n: number | null | undefined) =>
+  numberFormat.format(n ?? 0);
 
-const moneyFormat = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
-export const fmtMoney = (n: number | null | undefined) => moneyFormat.format(n ?? 0);
+const moneyFormat = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+export const fmtMoney = (n: number | null | undefined) =>
+  moneyFormat.format(n ?? 0);
 
-const dateFormat = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" });
-export const fmtDate = (d: string | null | undefined) => (d ? dateFormat.format(new Date(d)) : "—");
+const dateFormat = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+export const fmtDate = (d: string | null | undefined) =>
+  d ? dateFormat.format(new Date(d)) : "—";
 
 export function dateRange(e: Pick<Exhibition, "startDate" | "endDate">) {
   return `${fmtDate(e.startDate)} – ${fmtDate(e.endDate)}`;
@@ -82,7 +98,10 @@ export function useExhibitions() {
     queryKey: exhibitionKeys.list,
     queryFn: async () => {
       const res = await api<{ data: Exhibition[] }>("getexhibitions");
-      return [...res.data].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+      return [...res.data].sort(
+        (a, b) =>
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+      );
     },
   });
 }
@@ -90,23 +109,28 @@ export function useExhibitions() {
 export function useExhibition(id: string) {
   return useQuery({
     queryKey: exhibitionKeys.detail(id),
-    queryFn: async () => (await api<{ data: Exhibition }>(`getsingleexhibition/${id}`)).data,
+    queryFn: async () =>
+      (await api<{ data: Exhibition }>(`getsingleexhibition/${id}`)).data,
     enabled: Boolean(id),
   });
 }
 
 /** Clients booked for this exhibition, with their stalls already filtered to it. */
-export function useExhibitionClients(id: string) {
+export function useExhibitionClients(id: string, enabled = true) {
   return useQuery({
     queryKey: exhibitionKeys.clients(id),
-    queryFn: async () => (await api<{ data: ExhibitionClientRow[] }>(`exhibitions/${id}/clients`)).data,
-    enabled: Boolean(id),
+    queryFn: async () =>
+      (await api<{ data: ExhibitionClientRow[] }>(`exhibitions/${id}/clients`))
+        .data,
+    enabled: Boolean(id) && enabled,
   });
 }
 
 // ─── Mutations ─────────────────────────────────────────────────────────────
 
-export function useExhibitionsMutation<TInput>(fn: (input: TInput) => Promise<unknown>) {
+export function useExhibitionsMutation<TInput>(
+  fn: (input: TInput) => Promise<unknown>,
+) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: fn,
@@ -133,7 +157,13 @@ export type ExhibitionInput = {
   remarks?: string;
 };
 
-export const saveExhibition = ({ id, ...body }: ExhibitionInput & { id?: string }) =>
-  id ? api(`updateexhibition/${id}`, { method: "PUT", body }) : api("createexhibition", { method: "POST", body });
+export const saveExhibition = ({
+  id,
+  ...body
+}: ExhibitionInput & { id?: string }) =>
+  id
+    ? api(`updateexhibition/${id}`, { method: "PUT", body })
+    : api("createexhibition", { method: "POST", body });
 
-export const deleteExhibition = (id: string) => api(`deleteexhibition/${id}`, { method: "DELETE" });
+export const deleteExhibition = (id: string) =>
+  api(`deleteexhibition/${id}`, { method: "DELETE" });

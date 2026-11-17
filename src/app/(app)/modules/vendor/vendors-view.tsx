@@ -1,5 +1,7 @@
 "use client";
 
+import { useMe } from "@/hooks/use-me";
+import { mayDelete } from "@/lib/permissions";
 import { ChevronRight, Mail, Phone, Plus, Store, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -16,6 +18,7 @@ export function VendorsView() {
   const [editing, setEditing] = useState<Vendor | null | "new">(null);
   const [deleting, setDeleting] = useState<Vendor | null>(null);
   const remove = useVendorsMutation((id: string) => deleteVendor(id));
+  const me = useMe().data;
 
   const categories = useMemo(() => [...new Set((vendors.data ?? []).map((v) => v.category))].sort(), [vendors.data]);
 
@@ -104,9 +107,11 @@ export function VendorsView() {
                           <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(v)}>
                             Edit
                           </Button>
-                          <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(v)} aria-label={`Delete ${v.vendorName}`}>
-                            <Trash2 className="size-3.5" aria-hidden />
-                          </Button>
+                          {me && mayDelete(me, v.createdBy) && (
+                            <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(v)} aria-label={`Delete ${v.vendorName}`}>
+                              <Trash2 className="size-3.5" aria-hidden />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -5,7 +5,9 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { Modal } from "@/components/modal";
 import { Button } from "@/components/ui";
+import { useMe } from "@/hooks/use-me";
 import { ApiError } from "@/lib/api";
+import { canEditStock } from "@/lib/permissions";
 import {
   fmt,
   fmtDate,
@@ -30,6 +32,7 @@ export function WarehouseDetail() {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(false);
   const [transferring, setTransferring] = useState(false);
+  const me = useMe().data;
 
   if (summary.error instanceof ApiError && [400, 404].includes(summary.error.status)) {
     return (
@@ -60,10 +63,12 @@ export function WarehouseDetail() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="secondary" onClick={() => setEditing(true)} disabled={!w}>
-                  <Pencil className="size-4" aria-hidden />
-                  Edit
-                </Button>
+                {me && w && canEditStock(me, w.createdBy) && (
+                  <Button variant="secondary" onClick={() => setEditing(true)}>
+                    <Pencil className="size-4" aria-hidden />
+                    Edit
+                  </Button>
+                )}
                 <Button variant="secondary" onClick={() => setTransferring(true)} disabled={here.length === 0 || (warehouses.data?.length ?? 0) < 2}>
                   <ArrowLeftRight className="size-4" aria-hidden />
                   Transfer

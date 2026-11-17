@@ -6,7 +6,9 @@ import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
 import { Button, Select } from "@/components/ui";
 import { BackLink, Count, EmptyNote, EmptyState, QueryState, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
+import { useMe } from "@/hooks/use-me";
 import { ApiError } from "@/lib/api";
+import { mayDelete } from "@/lib/permissions";
 import {
   deleteEmployee,
   fmt,
@@ -20,6 +22,7 @@ import {
   useSalaryHistory,
   useYearlyReport,
 } from "@/lib/employees";
+import { AccessSection } from "../_components/access-section";
 import { AddAchievedDialog } from "../_components/add-achieved-dialog";
 import { EmployeeDialog } from "../_components/employee-dialog";
 import { GenerateSalaryDialog } from "../_components/generate-salary-dialog";
@@ -48,6 +51,7 @@ export function EmployeeDetail() {
 
   const remove = useEmployeesMutation((eid: string) => deleteEmployee(eid));
   const markPaid = useEmployeesMutation(markSalaryPaid);
+  const me = useMe().data;
 
   const canSeeSensitive = employee.data ? employee.data.current_salary !== undefined : false;
   const leave = useLeaveMonth(canSeeSensitive ? id : "", leaveMonth, leaveYear);
@@ -98,10 +102,12 @@ export function EmployeeDetail() {
                   <Pencil className="size-4" aria-hidden />
                   Edit
                 </Button>
-                <Button variant="secondary" className="hover:text-danger" onClick={() => setDeleting(true)}>
-                  <Trash2 className="size-4" aria-hidden />
-                  Delete
-                </Button>
+                {me && mayDelete(me, e.createdBy) && (
+                  <Button variant="secondary" className="hover:text-danger" onClick={() => setDeleting(true)}>
+                    <Trash2 className="size-4" aria-hidden />
+                    Delete
+                  </Button>
+                )}
                 {canSeeSensitive && (
                   <Button onClick={() => setGiving(true)}>
                     <TrendingUp className="size-4" aria-hidden />
@@ -317,6 +323,8 @@ export function EmployeeDetail() {
                 </Section>
               </>
             )}
+
+            {me?.role === "admin" && <AccessSection employeeId={e._id} />}
 
             <EmployeeDialog open={editing} employee={editing ? e : null} onClose={() => setEditing(false)} />
             <ConfirmDialog

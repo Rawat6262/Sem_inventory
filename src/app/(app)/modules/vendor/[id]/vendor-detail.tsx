@@ -1,5 +1,7 @@
 "use client";
 
+import { useMe } from "@/hooks/use-me";
+import { mayDelete } from "@/lib/permissions";
 import { CalendarDays, Mail, MapPin, Pencil, Phone, Plus, SearchX, Trash2, Wallet } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -28,6 +30,7 @@ export function VendorDetail() {
   const [paying, setPaying] = useState<{ exhibitionId?: string } | null>(null);
 
   const remove = useVendorsMutation((vid: string) => deleteVendor(vid));
+  const me = useMe().data;
 
   if (vendor.error instanceof ApiError && [400, 404].includes(vendor.error.status)) {
     return (
@@ -75,10 +78,12 @@ export function VendorDetail() {
                   <Pencil className="size-4" aria-hidden />
                   Edit
                 </Button>
-                <Button variant="secondary" className="hover:text-danger" onClick={() => setDeleting(true)}>
-                  <Trash2 className="size-4" aria-hidden />
-                  Delete
-                </Button>
+                {me && mayDelete(me, v.createdBy) && (
+                  <Button variant="secondary" className="hover:text-danger" onClick={() => setDeleting(true)}>
+                    <Trash2 className="size-4" aria-hidden />
+                    Delete
+                  </Button>
+                )}
                 <Button onClick={() => setPaying({})}>
                   <Wallet className="size-4" aria-hidden />
                   Record payment

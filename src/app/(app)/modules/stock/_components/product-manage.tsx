@@ -1,13 +1,16 @@
 "use client";
 
-import { ArrowLeftRight, Pencil, PackageCheck, SearchCheck, Skull, TriangleAlert, Wrench } from "lucide-react";
+import { ArrowLeftRight, Pencil, PackageCheck, SearchCheck, Skull, Trash2, TriangleAlert, Wrench } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Modal } from "@/components/modal";
 import { Alert, Button, cn, Field, Input, Textarea } from "@/components/ui";
+import { useMe } from "@/hooks/use-me";
+import { canDeleteOwned, canEditStock } from "@/lib/permissions";
 import {
   actionLimit,
   available,
   categoryName,
+  deleteProduct,
   fmt,
   PRODUCT_ACTIONS,
   runProductAction,
@@ -22,7 +25,7 @@ import {
 import { ProductDialog } from "./product-dialog";
 import { TransferForm } from "./transfer-form";
 
-type View = "overview" | "transfer" | ProductAction;
+type View = "overview" | "transfer" | "delete" | ProductAction;
 
 const ACTION_ICONS: Record<ProductAction, ReactNode> = {
   lost: <TriangleAlert className="size-4" aria-hidden />,
@@ -39,6 +42,9 @@ export function ProductManageDialog({ product, onClose }: { product: Product | n
   const [editing, setEditing] = useState(false);
   const categories = useCategories();
   const warehouses = useWarehouses();
+  const me = useMe().data;
+  const canDelete = Boolean(me && product && canDeleteOwned(me, product.createdBy));
+  const canEdit = Boolean(me && product && canEditStock(me, product.createdBy));
 
   const close = () => {
     setView("overview");
@@ -59,7 +65,15 @@ export function ProductManageDialog({ product, onClose }: { product: Product | n
   }
 
   const p = product;
-  const title = !p ? "" : view === "overview" ? p.name : view === "transfer" ? `Transfer ${p.name}` : `${PRODUCT_ACTIONS[view].label}: ${p.name}`;
+  const title = !p
+    ? ""
+    : view === "overview"
+      ? p.name
+      : view === "transfer"
+        ? `Transfer ${p.name}`
+        : view === "delete"
+          ? `Delete ${p.name}?`
+          : `${PRODUCT_ACTIONS[view].label}: ${p.name}`;
 
   return (
     <Modal
@@ -88,9 +102,11 @@ export function ProductManageDialog({ product, onClose }: { product: Product | n
             </dl>
           )}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <ActionButton icon={<Pencil className="size-4" aria-hidden />} onClick={() => setEditing(true)}>
-              Edit details
-            </ActionButton>
+            {canEdit && (
+              <ActionButton icon={<Pencil className="size-4" aria-hidden />} onClick={() => setEditing(true)}>
+                Edit details
+              </ActionButton>
+            )}
             <ActionButton icon={<ArrowLeftRight className="size-4" aria-hidden />} onClick={() => setView("transfer")} disabled={available(p) === 0}>
               Transfer to another warehouse
             </ActionButton>
@@ -99,16 +115,44 @@ export function ProductManageDialog({ product, onClose }: { product: Product | n
                 {PRODUCT_ACTIONS[a].label}
               </ActionButton>
             ))}
+            {canDelete && (
+              <ActionButton icon={<Trash2 className="size-4" aria-hidden />} onClick={() => setView("delete")}>
+                Delete product
+              </ActionButton>
+            )}
           </div>
         </>
       )}
 
       {p && view === "transfer" && <TransferForm product={p} onDone={close} onCancel={() => setView("overview")} />}
 
-      {p && view !== "overview" && view !== "transfer" && (
+      {p && view === "delete" && <DeleteProduct product={p} onDone={close} onBack={() => setView("overview")} />}
+
+      {p && view !== "overview" && view !== "transfer" && view !== "delete" && (
         <QuantityAction key={view} product={p} action={view} onDone={close} onBack={() => setView("overview")} />
       )}
     </Modal>
+  );
+}
+
+function DeleteProduct({ product, onDone, onBack }: { product: Product; onDone: () => void; onBack: () => void }) {
+  const remove = useStockMutation((id: string) => deleteProduct(id));
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-muted">
+        This removes the product and its stock numbers from the warehouse. Challans and transfers that mention it stay as they are. This can&apos;t be
+        undone.
+      </p>
+      {remove.error && <Alert>{remove.error.message}</Alert>}
+      <div className="flex justify-end gap-2 border-t border-line pt-4">
+        <Button type="button" variant="secondary" onClick={onBack} disabled={remove.isPending}>
+          Back
+        </Button>
+        <Button type="button" className="bg-danger text-white hover:opacity-90" loading={remove.isPending} onClick={() => remove.mutate(product._id, { onSuccess: onDone })}>
+          Delete product
+        </Button>
+      </div>
+    </div>
   );
 }
 

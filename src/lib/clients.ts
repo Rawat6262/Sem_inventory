@@ -32,6 +32,7 @@ export type Design = {
   option_no: number;
   remarks?: string;
   isfinal: boolean;
+  createdBy?: string | null;
   createdAt?: string;
 };
 
@@ -52,8 +53,17 @@ export type Client = {
   phoneNumber: string;
   address?: string;
   exhibition: ClientExhibitionEntry[];
+  createdBy?: { _id: string; full_name?: string } | string | null;
   createdAt?: string;
 };
+
+/** Another user's client, as the directory shows it: names only. */
+export type DirectoryClient = { _id: string; companyName: string; clientName: string; addedBy: string | null };
+
+/** Who added a client, when the API populated it. */
+export function addedByName(c: Client): string | null {
+  return c.createdBy && typeof c.createdBy === "object" ? (c.createdBy.full_name ?? null) : null;
+}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -102,16 +112,30 @@ export const fmtDate = (d: string | null | undefined) => (d ? dateFormat.format(
 export const clientKeys = {
   all: ["clients"] as const,
   list: ["clients", "list"] as const,
+  directory: ["clients", "directory"] as const,
   detail: (id: string) => ["clients", "detail", id] as const,
 };
+
+// A client is identified by its company, so lists are ordered by company.
+const byCompany = (a: { companyName?: string; clientName: string }, b: { companyName?: string; clientName: string }) =>
+  (a.companyName || a.clientName).localeCompare(b.companyName || b.clientName);
 
 export function useClients() {
   return useQuery({
     queryKey: clientKeys.list,
     queryFn: async () => {
       const res = await api<{ data: Client[] }>("getAllClients");
-      return [...res.data].sort((a, b) => a.clientName.localeCompare(b.clientName));
+      return [...res.data].sort(byCompany);
     },
+  });
+}
+
+/** Clients added by other users (company and client name only). */
+export function useClientDirectory(enabled: boolean) {
+  return useQuery({
+    queryKey: clientKeys.directory,
+    queryFn: async () => [...(await api<{ data: DirectoryClient[] }>("client-directory")).data].sort(byCompany),
+    enabled,
   });
 }
 
@@ -133,7 +157,7 @@ export function useClientsMutation<TInput>(fn: (input: TInput) => Promise<unknow
   });
 }
 
-export type ClientInput = { clientName: string; companyName?: string; phoneNumber: string; address?: string };
+export type ClientInput = { clientName: string; companyName: string; phoneNumber: string; address?: string };
 
 // updateClient replaces all 4 fields (not a partial merge) — always send the full set.
 export const saveClient = ({ id, ...body }: ClientInput & { id?: string }) =>

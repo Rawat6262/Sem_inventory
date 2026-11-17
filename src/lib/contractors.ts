@@ -48,6 +48,7 @@ export type Contractor = {
   labour_type: string;
   exhibition: LabourExhibitionEntry[];
   transactions?: string[];
+  createdBy?: string | null;
 };
 
 export type Person = { _id: string; name: string; phone?: string };

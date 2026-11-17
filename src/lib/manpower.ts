@@ -10,7 +10,7 @@ import { useExhibitionsList, type ExhibitionRef } from "@/lib/contractors";
 
 export { useExhibitionsList, type ExhibitionRef };
 
-export type Person = { _id: string; name: string; phone?: string; createdAt?: string };
+export type Person = { _id: string; name: string; phone?: string; createdBy?: string | null; createdAt?: string };
 
 export type WorkType = "DAY_WAGE" | "TENDER";
 

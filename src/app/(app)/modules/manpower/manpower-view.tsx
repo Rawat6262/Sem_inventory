@@ -1,5 +1,7 @@
 "use client";
 
+import { useMe } from "@/hooks/use-me";
+import { mayDelete } from "@/lib/permissions";
 import { ChevronRight, Phone, Plus, Trash2, Users } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -15,6 +17,7 @@ export function ManpowerView() {
   const [editing, setEditing] = useState<Person | null | "new">(null);
   const [deleting, setDeleting] = useState<Person | null>(null);
   const remove = useManpowerMutation((id: string) => deletePerson(id));
+  const me = useMe().data;
 
   const q = search.trim().toLowerCase();
   const list = (persons.data ?? []).filter((p) => !q || p.name.toLowerCase().includes(q) || p.phone?.includes(q));
@@ -79,9 +82,11 @@ export function ManpowerView() {
                           <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(p)}>
                             Edit
                           </Button>
-                          <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(p)} aria-label={`Delete ${p.name}`}>
-                            <Trash2 className="size-3.5" aria-hidden />
-                          </Button>
+                          {me && mayDelete(me, p.createdBy) && (
+                            <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(p)} aria-label={`Delete ${p.name}`}>
+                              <Trash2 className="size-3.5" aria-hidden />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

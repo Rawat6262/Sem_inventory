@@ -31,7 +31,7 @@ function ClientForm({ client, onDone }: { client?: Client | null; onDone: () => 
       {
         id: client?._id,
         clientName: form.clientName.trim(),
-        companyName: form.companyName.trim() || undefined,
+        companyName: form.companyName.trim(),
         phoneNumber: form.phoneNumber.trim(),
         address: form.address.trim() || undefined,
       },
@@ -41,11 +41,13 @@ function ClientForm({ client, onDone }: { client?: Client | null; onDone: () => 
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
-      <Field label="Client name">
-        {(id) => <Input id={id} required value={form.clientName} onChange={(e) => set("clientName")(e.target.value)} placeholder="Ramesh Furnishings" />}
+      <Field label="Company name" hint="A company can only be added once. If someone else already added it, ask them to share it with you.">
+        {(id) => (
+          <Input id={id} required autoFocus value={form.companyName} onChange={(e) => set("companyName")(e.target.value)} placeholder="Ramesh Furnishings Pvt Ltd" />
+        )}
       </Field>
-      <Field label="Company name (optional)">
-        {(id) => <Input id={id} value={form.companyName} onChange={(e) => set("companyName")(e.target.value)} />}
+      <Field label="Client name">
+        {(id) => <Input id={id} required value={form.clientName} onChange={(e) => set("clientName")(e.target.value)} placeholder="Ramesh Kumar" />}
       </Field>
       <Field label="Phone number">
         {(id) => <Input id={id} type="tel" inputMode="numeric" required value={form.phoneNumber} onChange={(e) => set("phoneNumber")(e.target.value)} />}

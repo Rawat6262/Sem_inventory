@@ -85,6 +85,8 @@ export function SignupForm() {
       router.push("/verify-otp");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-up failed");
+    } finally {
+      // The page stays mounted in the background (Cache Components).
       setLoading(false);
     }
   }

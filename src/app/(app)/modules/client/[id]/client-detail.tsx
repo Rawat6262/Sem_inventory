@@ -7,7 +7,9 @@ import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
 import { Button } from "@/components/ui";
 import { BackLink, Count, EmptyNote, EmptyState, QueryState, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
+import { useMe } from "@/hooks/use-me";
 import { ApiError } from "@/lib/api";
+import { canOpen, mayDelete } from "@/lib/permissions";
 import {
   clientTotals,
   deleteClient,
@@ -44,6 +46,8 @@ export function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const client = useClient(id);
+  const me = useMe().data;
+  const canSeeReports = Boolean(me && canOpen(me.role, "reports"));
 
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -69,11 +73,21 @@ export function ClientDetail() {
     );
   }
 
+  if (client.error instanceof ApiError && client.error.status === 403) {
+    return (
+      <EmptyState icon={<SearchX className="size-6" />} title="Not your client" action={<BackLink href="/modules/client">Back to clients</BackLink>}>
+        You can only open clients you added. Ask the person who added this client to share it with you.
+      </EmptyState>
+    );
+  }
+
   return (
     <QueryState queries={[client]}>
       {() => {
         const c = client.data!;
         const totals = clientTotals(c);
+        // Removing the client, its bookings or its stalls needs ownership of the client.
+        const canRemove = Boolean(me && mayDelete(me, c.createdBy));
 
         return (
           <>
@@ -81,9 +95,9 @@ export function ClientDetail() {
 
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="text-xl font-semibold">{c.clientName}</h2>
+                <h2 className="text-xl font-semibold">{c.companyName || c.clientName}</h2>
                 <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
-                  {c.companyName && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium">{c.companyName}</span>}
+                  {c.companyName && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium">{c.clientName}</span>}
                   <span className="inline-flex items-center gap-1">
                     <Phone className="size-3.5" aria-hidden />
                     {c.phoneNumber}
@@ -96,16 +110,20 @@ export function ClientDetail() {
                   <Pencil className="size-4" aria-hidden />
                   Edit
                 </Button>
-                <Button variant="secondary" className="hover:text-danger" onClick={() => setDeleting(true)}>
-                  <Trash2 className="size-4" aria-hidden />
-                  Delete
-                </Button>
-                <Link href={`/modules/reports/clients/${c._id}`}>
-                  <Button variant="secondary">
-                    <ChartColumn className="size-4" aria-hidden />
-                    Payment report
+                {canRemove && (
+                  <Button variant="secondary" className="hover:text-danger" onClick={() => setDeleting(true)}>
+                    <Trash2 className="size-4" aria-hidden />
+                    Delete
                   </Button>
-                </Link>
+                )}
+                {canSeeReports && (
+                  <Link href={`/modules/reports/clients/${c._id}`}>
+                    <Button variant="secondary">
+                      <ChartColumn className="size-4" aria-hidden />
+                      Payment report
+                    </Button>
+                  </Link>
+                )}
                 <Button onClick={() => setAddingExhibition(true)}>
                   <Plus className="size-4" aria-hidden />
                   Book for exhibition
@@ -145,14 +163,16 @@ export function ClientDetail() {
                           <Plus className="size-3.5" aria-hidden />
                           Add stall
                         </Button>
-                        <Button
-                          variant="ghost"
-                          className="h-8 px-2.5 text-muted hover:text-danger"
-                          onClick={() => setRemovingExhibition(entry)}
-                          aria-label={`Remove ${exhibitionName}`}
-                        >
-                          <Trash2 className="size-3.5" aria-hidden />
-                        </Button>
+                        {canRemove && (
+                          <Button
+                            variant="ghost"
+                            className="h-8 px-2.5 text-muted hover:text-danger"
+                            onClick={() => setRemovingExhibition(entry)}
+                            aria-label={`Remove ${exhibitionName}`}
+                          >
+                            <Trash2 className="size-3.5" aria-hidden />
+                          </Button>
+                        )}
                       </div>
                     }
                   >
@@ -203,14 +223,16 @@ export function ClientDetail() {
                                       <Button variant="ghost" className="h-8 px-2" onClick={() => setStallDialog({ exhibitionId, stall })} aria-label="Edit stall">
                                         <Pencil className="size-3.5" aria-hidden />
                                       </Button>
-                                      <Button
-                                        variant="ghost"
-                                        className="h-8 px-2 hover:text-danger"
-                                        onClick={() => setRemovingStall({ exhibitionId, stall })}
-                                        aria-label="Remove stall"
-                                      >
-                                        <Trash2 className="size-3.5" aria-hidden />
-                                      </Button>
+                                      {canRemove && (
+                                        <Button
+                                          variant="ghost"
+                                          className="h-8 px-2 hover:text-danger"
+                                          onClick={() => setRemovingStall({ exhibitionId, stall })}
+                                          aria-label="Remove stall"
+                                        >
+                                          <Trash2 className="size-3.5" aria-hidden />
+                                        </Button>
+                                      )}
                                     </div>
                                   </td>
                                 </tr>
@@ -263,14 +285,16 @@ export function ClientDetail() {
                             >
                               <Pencil className="size-3" aria-hidden />
                             </button>
-                            <button
-                              type="button"
-                              className="text-muted hover:text-danger"
-                              onClick={() => setRemovingDesign(d)}
-                              aria-label={`Delete option ${d.option_no}`}
-                            >
-                              <Trash2 className="size-3" aria-hidden />
-                            </button>
+                            {me && mayDelete(me, d.createdBy) && (
+                              <button
+                                type="button"
+                                className="text-muted hover:text-danger"
+                                onClick={() => setRemovingDesign(d)}
+                                aria-label={`Delete option ${d.option_no}`}
+                              >
+                                <Trash2 className="size-3" aria-hidden />
+                              </button>
+                            )}
                           </span>
                         ))}
                       </div>

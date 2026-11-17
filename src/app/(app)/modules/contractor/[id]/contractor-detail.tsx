@@ -1,5 +1,7 @@
 "use client";
 
+import { useMe } from "@/hooks/use-me";
+import { mayDelete } from "@/lib/permissions";
 import { CalendarDays, MapPin, Pencil, Phone, Plus, Receipt, SearchX, Trash2, Wallet } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -48,6 +50,7 @@ export function ContractorDetail() {
   const remove = useContractorsMutation((cid: string) => deleteContractor(cid));
   const removeExhibition = useContractorsMutation(removeExhibitionFromContractor);
   const removeStallMut = useContractorsMutation(removeStall);
+  const me = useMe().data;
 
   if (contractor.error instanceof ApiError && [400, 404].includes(contractor.error.status)) {
     return (
@@ -61,6 +64,8 @@ export function ContractorDetail() {
     <QueryState queries={[contractor, summary]}>
       {() => {
         const c = contractor.data!;
+        // Removing the contractor, its bookings or stalls needs ownership.
+        const canRemove = Boolean(me && mayDelete(me, c.createdBy));
         const s = summary.data!;
         const totals = contractorTotals(c);
         const expenseByExhibition = new Map(s.byExhibition.map((e) => [e.exhibition_id, e]));
@@ -89,10 +94,12 @@ export function ContractorDetail() {
                   <Pencil className="size-4" aria-hidden />
                   Edit
                 </Button>
-                <Button variant="secondary" className="hover:text-danger" onClick={() => setDeleting(true)}>
-                  <Trash2 className="size-4" aria-hidden />
-                  Delete
-                </Button>
+                {canRemove && (
+                  <Button variant="secondary" className="hover:text-danger" onClick={() => setDeleting(true)}>
+                    <Trash2 className="size-4" aria-hidden />
+                    Delete
+                  </Button>
+                )}
                 <Button onClick={() => setAddingExhibition(true)}>
                   <Plus className="size-4" aria-hidden />
                   Book for exhibition
@@ -130,14 +137,16 @@ export function ContractorDetail() {
                           <Plus className="size-3.5" aria-hidden />
                           Add stall
                         </Button>
-                        <Button
-                          variant="ghost"
-                          className="h-8 px-2.5 text-muted hover:text-danger"
-                          onClick={() => setRemovingExhibition(entry)}
-                          aria-label={`Remove ${exhibitionName}`}
-                        >
-                          <Trash2 className="size-3.5" aria-hidden />
-                        </Button>
+                        {canRemove && (
+                          <Button
+                            variant="ghost"
+                            className="h-8 px-2.5 text-muted hover:text-danger"
+                            onClick={() => setRemovingExhibition(entry)}
+                            aria-label={`Remove ${exhibitionName}`}
+                          >
+                            <Trash2 className="size-3.5" aria-hidden />
+                          </Button>
+                        )}
                       </div>
                     }
                   >
@@ -194,14 +203,16 @@ export function ContractorDetail() {
                                     <Button variant="ghost" className="h-8 px-2" onClick={() => setStallDialog({ exhibitionId, stall })} aria-label="Edit stall">
                                       <Pencil className="size-3.5" aria-hidden />
                                     </Button>
-                                    <Button
-                                      variant="ghost"
-                                      className="h-8 px-2 hover:text-danger"
-                                      onClick={() => setRemovingStall({ exhibitionId, stall })}
-                                      aria-label="Remove stall"
-                                    >
-                                      <Trash2 className="size-3.5" aria-hidden />
-                                    </Button>
+                                    {canRemove && (
+                                      <Button
+                                        variant="ghost"
+                                        className="h-8 px-2 hover:text-danger"
+                                        onClick={() => setRemovingStall({ exhibitionId, stall })}
+                                        aria-label="Remove stall"
+                                      >
+                                        <Trash2 className="size-3.5" aria-hidden />
+                                      </Button>
+                                    )}
                                   </div>
                                 </td>
                               </tr>

@@ -1,14 +1,14 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Alert, Button, cn, Spinner } from "@/components/ui";
 import { useMe } from "@/hooks/use-me";
 import { ApiError, authApi } from "@/lib/api";
-import { isRole, modulesFor, ROLE_LABELS, type ModuleDef, type ModuleGroup } from "@/lib/permissions";
+import { hasProfile, isRole, modulesFor, ROLE_LABELS, type ModuleDef, type ModuleGroup } from "@/lib/permissions";
 
 const GROUP_ORDER: ModuleGroup[] = ["Operations", "Partners", "Money", "Documents", "People", "Admin"];
 
@@ -41,6 +41,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     } finally {
       queryClient.clear();
       router.replace("/login");
+      // Cache Components keeps this shell's state while the login page shows,
+      // so without this the button is still spinning after the next login.
+      setLoggingOut(false);
     }
   }
 
@@ -57,14 +60,21 @@ export function AppShell({ children }: { children: ReactNode }) {
     );
   }
 
-  const groups = groupModules(modulesFor(me.role));
+  const groups = groupModules(modulesFor(me.role, me.extraModules));
   const roleLabel = isRole(me.role) ? ROLE_LABELS[me.role] : me.role;
 
   const nav = (
     <nav className="flex flex-col gap-6 px-3 py-4" aria-label="Main">
-      <NavLink href="/" active={pathname === "/"} icon={<LayoutDashboard className="size-4" />}>
-        Dashboard
-      </NavLink>
+      <div className="flex flex-col gap-0.5">
+        <NavLink href="/" active={pathname === "/"} icon={<LayoutDashboard className="size-4" />}>
+          Dashboard
+        </NavLink>
+        {hasProfile(me.role) && (
+          <NavLink href="/profile" active={pathname === "/profile"} icon={<UserRound className="size-4" />}>
+            My profile
+          </NavLink>
+        )}
+      </div>
       {groups.map(({ group, items }) => (
         <div key={group}>
           <p className="px-3 pb-1.5 text-xs font-medium uppercase tracking-wide text-muted">{group}</p>

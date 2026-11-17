@@ -1,5 +1,7 @@
 "use client";
 
+import { useMe } from "@/hooks/use-me";
+import { mayDelete } from "@/lib/permissions";
 import { CalendarDays, MapPin, Pencil, Phone, Plus, Receipt, SearchX, Trash2, Wallet } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -32,6 +34,7 @@ export function TransportDetail() {
   const [paying, setPaying] = useState<{ exhibitionId?: string } | null>(null);
 
   const remove = useTransportMutation((tid: string) => deleteTransporter(tid));
+  const me = useMe().data;
 
   if (summary.error instanceof ApiError && [400, 404].includes(summary.error.status)) {
     return (
@@ -78,10 +81,12 @@ export function TransportDetail() {
                   <Pencil className="size-4" aria-hidden />
                   Edit
                 </Button>
-                <Button variant="secondary" className="hover:text-danger" onClick={() => setDeleting(true)}>
-                  <Trash2 className="size-4" aria-hidden />
-                  Delete
-                </Button>
+                {me && mayDelete(me, t.createdBy) && (
+                  <Button variant="secondary" className="hover:text-danger" onClick={() => setDeleting(true)}>
+                    <Trash2 className="size-4" aria-hidden />
+                    Delete
+                  </Button>
+                )}
                 <Button variant="secondary" onClick={() => setAddingTrip({})}>
                   <Receipt className="size-4" aria-hidden />
                   Add trip charge

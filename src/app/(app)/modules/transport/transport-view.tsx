@@ -1,5 +1,7 @@
 "use client";
 
+import { useMe } from "@/hooks/use-me";
+import { mayDelete } from "@/lib/permissions";
 import { ChevronRight, MapPin, Phone, Plus, Trash2, Truck } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -15,6 +17,7 @@ export function TransportView() {
   const [editing, setEditing] = useState<Transporter | null | "new">(null);
   const [deleting, setDeleting] = useState<Transporter | null>(null);
   const remove = useTransportMutation((id: string) => deleteTransporter(id));
+  const me = useMe().data;
 
   const q = search.trim().toLowerCase();
   const list = useMemo(
@@ -94,9 +97,11 @@ export function TransportView() {
                           <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(t)}>
                             Edit
                           </Button>
-                          <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(t)} aria-label={`Delete ${t.transporter_name}`}>
-                            <Trash2 className="size-3.5" aria-hidden />
-                          </Button>
+                          {me && mayDelete(me, t.createdBy) && (
+                            <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(t)} aria-label={`Delete ${t.transporter_name}`}>
+                              <Trash2 className="size-3.5" aria-hidden />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -1,22 +1,42 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, UserRound } from "lucide-react";
 import Link from "next/link";
 import { groupModules } from "@/components/app-shell";
 import { useMe } from "@/hooks/use-me";
-import { modulesFor } from "@/lib/permissions";
+import { missingProfileFields, useMyProfile } from "@/lib/employees";
+import { hasProfile, modulesFor } from "@/lib/permissions";
 
 export function Dashboard() {
   const { data: me } = useMe();
+  const profile = useMyProfile(Boolean(me && hasProfile(me.role)));
   if (!me) return null;
 
-  const groups = groupModules(modulesFor(me.role));
+  const missing = profile.data ? missingProfileFields(profile.data) : [];
+
+  const groups = groupModules(modulesFor(me.role, me.extraModules));
   const firstName = (me.full_name || "").trim().split(/\s+/)[0];
 
   return (
     <div className="mx-auto max-w-6xl">
       <h1 className="text-2xl font-semibold tracking-tight">{firstName ? `Hello, ${firstName}` : "Dashboard"}</h1>
       <p className="mt-1 text-sm text-muted">Pick a module to get started.</p>
+
+      {missing.length > 0 && (
+        <Link
+          href="/profile"
+          className="mt-6 flex items-center gap-4 rounded-xl border border-accent/40 bg-accent-soft/40 p-4 transition-colors hover:bg-accent-soft/70"
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent">
+            <UserRound className="size-5" aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-medium">Complete your profile</span>
+            <span className="mt-0.5 block text-sm text-muted">Still missing: {missing.join(", ")}.</span>
+          </span>
+          <ChevronRight className="size-4 text-muted" aria-hidden />
+        </Link>
+      )}
 
       <div className="mt-8 flex flex-col gap-8">
         {groups.map(({ group, items }) => (

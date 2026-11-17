@@ -17,9 +17,10 @@ export type Warehouse = {
   state: string;
   city: string;
   products?: string[];
+  createdBy?: string | null;
 };
 
-export type Category = { _id: string; category: string };
+export type Category = { _id: string; category: string; createdBy?: string | null };
 
 export type Vendor = { _id: string; vendorName: string };
 
@@ -40,6 +41,7 @@ export type Product = {
   vendor?: Vendor | string | null;
   warehouse?: string | null;
   remark?: string | null;
+  createdBy?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -239,6 +241,8 @@ export const addProduct = (body: ProductInput) => api("addproduct", { method: "P
 
 export const updateProduct = ({ id, ...body }: Partial<ProductInput> & { id: string }) =>
   api(`updateproduct/${id}`, { method: "PUT", body });
+
+export const deleteProduct = (id: string) => api(`deleteproduct/${id}`, { method: "DELETE" });
 
 /** Moves units between the shelf and lost / dead / repair. */
 export const PRODUCT_ACTIONS = {

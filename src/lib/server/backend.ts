@@ -54,6 +54,7 @@ export type SessionUser = {
   gmail: string;
   role: string;
   mobile_number?: number | string;
+  extraModules: string[];
 };
 
 export function pickUser(raw: unknown): SessionUser | null {
@@ -66,6 +67,7 @@ export function pickUser(raw: unknown): SessionUser | null {
     gmail: String(u.gmail ?? ""),
     role: u.role.toLowerCase(),
     mobile_number: (u.mobile_number as number | string | undefined) ?? undefined,
+    extraModules: Array.isArray(u.extraModules) ? u.extraModules.filter((m): m is string => typeof m === "string") : [],
   };
 }
 

@@ -33,7 +33,7 @@ export function ModuleShell({ module, title, description, icon, tabs, children }
   const { data: me } = useMe();
   if (!me) return null;
 
-  if (!canOpen(me.role, module)) {
+  if (!canOpen(me.role, module, me.extraModules)) {
     return (
       <EmptyState icon={<Lock className="size-6" />} title={`You don't have access to ${title.toLowerCase()}`}>
         Ask an admin if you need it.

@@ -24,6 +24,7 @@ export type Quotation = {
   gst_percent: number;
   gst_amount: number;
   total: number;
+  createdBy?: string | null;
   createdAt: string;
 };
 

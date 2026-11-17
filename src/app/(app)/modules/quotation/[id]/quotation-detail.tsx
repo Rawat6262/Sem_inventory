@@ -6,7 +6,9 @@ import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
 import { Button } from "@/components/ui";
 import { BackLink, EmptyState, QueryState } from "@/components/data-ui";
+import { useMe } from "@/hooks/use-me";
 import { ApiError } from "@/lib/api";
+import { mayDelete } from "@/lib/permissions";
 import {
   deleteQuotation,
   fmtDate,
@@ -32,6 +34,7 @@ export function QuotationDetail() {
 
   const remove = useQuotationsMutation((qid: string) => deleteQuotation(qid));
   const removeItem = useQuotationsMutation(removeQuotationItem);
+  const me = useMe().data;
 
   if (quotation.error instanceof ApiError && [400, 404].includes(quotation.error.status)) {
     return (
@@ -45,6 +48,8 @@ export function QuotationDetail() {
     <QueryState queries={[quotation]}>
       {() => {
         const q = quotation.data!;
+        // Deleting the quotation or removing its items needs ownership.
+        const canRemove = Boolean(me && mayDelete(me, q.createdBy));
 
         return (
           <>
@@ -64,10 +69,12 @@ export function QuotationDetail() {
                     <Pencil className="size-4" aria-hidden />
                     Edit details
                   </Button>
-                  <Button variant="secondary" className="hover:text-danger" onClick={() => setDeleting(true)}>
-                    <Trash2 className="size-4" aria-hidden />
-                    Delete
-                  </Button>
+                  {canRemove && (
+                    <Button variant="secondary" className="hover:text-danger" onClick={() => setDeleting(true)}>
+                      <Trash2 className="size-4" aria-hidden />
+                      Delete
+                    </Button>
+                  )}
                   <Button onClick={() => window.print()}>
                     <Printer className="size-4" aria-hidden />
                     Print / Export PDF
@@ -112,9 +119,11 @@ export function QuotationDetail() {
                           <Button variant="ghost" className="h-8 px-2" onClick={() => setItemDialog({ item })} aria-label="Edit item">
                             <Pencil className="size-3.5" aria-hidden />
                           </Button>
-                          <Button variant="ghost" className="h-8 px-2 hover:text-danger" onClick={() => setRemovingItem(item)} aria-label="Remove item">
-                            <Trash2 className="size-3.5" aria-hidden />
-                          </Button>
+                          {canRemove && (
+                            <Button variant="ghost" className="h-8 px-2 hover:text-danger" onClick={() => setRemovingItem(item)} aria-label="Remove item">
+                              <Trash2 className="size-3.5" aria-hidden />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </li>

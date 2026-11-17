@@ -32,6 +32,7 @@ export type TransporterTransaction = {
 
 export type Transporter = {
   _id: string;
+  createdBy?: string | null;
   transporter_name: string;
   country: string;
   state: string;

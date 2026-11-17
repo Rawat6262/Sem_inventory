@@ -1,5 +1,7 @@
 "use client";
 
+import { useMe } from "@/hooks/use-me";
+import { mayDelete } from "@/lib/permissions";
 import { ArrowLeftRight, Pencil, Plus, Trash2, Wallet } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
@@ -36,6 +38,7 @@ export function TransactionsView() {
   const [paying, setPaying] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState<Transaction | null>(null);
   const remove = useTransactionsMutation((id: string) => deleteTransaction(id));
+  const me = useMe().data;
 
   const totals = useMemo(
     () =>
@@ -158,9 +161,11 @@ export function TransactionsView() {
                           <Button variant="ghost" className="h-8 px-2" onClick={() => setEditing(t)} aria-label="Edit">
                             <Pencil className="size-3.5" aria-hidden />
                           </Button>
-                          <Button variant="ghost" className="h-8 px-2 hover:text-danger" onClick={() => setDeleting(t)} aria-label="Delete">
-                            <Trash2 className="size-3.5" aria-hidden />
-                          </Button>
+                          {me && mayDelete(me, t.createdBy) && (
+                            <Button variant="ghost" className="h-8 px-2 hover:text-danger" onClick={() => setDeleting(t)} aria-label="Delete">
+                              <Trash2 className="size-3.5" aria-hidden />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

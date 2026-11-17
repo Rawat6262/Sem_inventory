@@ -38,6 +38,8 @@ export function VerifyOtpForm() {
       router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
+    } finally {
+      // The page stays mounted in the background (Cache Components).
       setLoading(false);
     }
   }

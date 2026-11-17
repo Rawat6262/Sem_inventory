@@ -6,6 +6,8 @@ import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
 import { Button } from "@/components/ui";
 import { EmptyState, QueryState, SearchBox, TableWrap, td, th } from "@/components/data-ui";
+import { useMe } from "@/hooks/use-me";
+import { mayDelete } from "@/lib/permissions";
 import {
   deleteQuotation,
   fmt,
@@ -25,6 +27,7 @@ export function QuotationsView() {
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<Quotation | null>(null);
   const remove = useQuotationsMutation((id: string) => deleteQuotation(id));
+  const me = useMe().data;
 
   function runSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -102,9 +105,11 @@ export function QuotationsView() {
                             View
                             <ChevronRight className="size-3.5" aria-hidden />
                           </Link>
-                          <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(q)} aria-label={`Delete ${q.title}`}>
-                            <Trash2 className="size-3.5" aria-hidden />
-                          </Button>
+                          {me && mayDelete(me, q.createdBy) && (
+                            <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(q)} aria-label={`Delete ${q.title}`}>
+                              <Trash2 className="size-3.5" aria-hidden />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

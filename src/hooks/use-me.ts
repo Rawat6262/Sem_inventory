@@ -9,6 +9,7 @@ export type Me = {
   gmail: string;
   role: string;
   mobile_number?: number | string;
+  extraModules?: string[]; // modules an admin granted on top of the role
 };
 
 export const ME_KEY = ["me"] as const;
