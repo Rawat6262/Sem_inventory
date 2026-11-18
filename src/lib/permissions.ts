@@ -197,7 +197,6 @@ const DENIED: Record<Role, ModuleKey[]> = {
   ],
   account: ["reports", "activity"],
   supervisor: [
-    "stock",
     "client",
     "employees",
     "quotation",
@@ -263,13 +262,15 @@ export function canDeleteOwned(
 
 /**
  * Employees see all stock and exhibitions but only edit the warehouses,
- * products and exhibitions they added.
+ * products and exhibitions they added. Supervisors get the same stock rule
+ * (exhibitions they can't edit at all: canManageExhibitions).
  */
 export function canEditStock(
   me: { _id: string; role: string },
   createdBy: string | { _id: string } | null | undefined,
 ): boolean {
-  return me.role !== "employee" || canDeleteOwned(me, createdBy);
+  if (me.role !== "employee" && me.role !== "supervisor") return true;
+  return canDeleteOwned(me, createdBy);
 }
 
 export const canEditOwnRecord = canEditStock;
