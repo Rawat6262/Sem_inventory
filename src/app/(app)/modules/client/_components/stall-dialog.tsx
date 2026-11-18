@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Modal } from "@/components/modal";
 import { Alert, Button, Field, Input } from "@/components/ui";
 import { addClientStall, updateClientStall, useClientsMutation, type ClientStall } from "@/lib/clients";
+import { StallMoneyFields, stallOverpaid } from "./stall-money-fields";
 
 type Props = {
   open: boolean;
@@ -71,17 +72,7 @@ function StallForm({ clientId, exhibitionId, stall, onDone }: { clientId: string
       {!stall && (
         <>
           <p className="text-xs font-medium text-muted">Payment (optional — can also be recorded later)</p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Field label="Deal amount">
-              {(id) => <Input id={id} type="number" inputMode="numeric" min={0} value={form.deal_amount} onChange={(e) => set("deal_amount")(e.target.value)} />}
-            </Field>
-            <Field label="Advance paid">
-              {(id) => <Input id={id} type="number" inputMode="numeric" min={0} value={form.advance_payment} onChange={(e) => set("advance_payment")(e.target.value)} />}
-            </Field>
-            <Field label="Received">
-              {(id) => <Input id={id} type="number" inputMode="numeric" min={0} value={form.received_payment} onChange={(e) => set("received_payment")(e.target.value)} />}
-            </Field>
-          </div>
+          <StallMoneyFields value={form} onChange={(k, v) => set(k)(v)} />
         </>
       )}
 
@@ -91,7 +82,7 @@ function StallForm({ clientId, exhibitionId, stall, onDone }: { clientId: string
         <Button type="button" variant="secondary" onClick={onDone} disabled={save.isPending}>
           Cancel
         </Button>
-        <Button type="submit" loading={save.isPending}>
+        <Button type="submit" loading={save.isPending} disabled={!stall && stallOverpaid(form)}>
           {stall ? "Save changes" : "Add stall"}
         </Button>
       </div>

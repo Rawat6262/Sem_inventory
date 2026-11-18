@@ -99,10 +99,10 @@ function WorkPaymentForm({ personId, workPayment, onDone }: { personId: string; 
           </Field>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Wage days">
-              {(id) => <Input id={id} type="number" inputMode="numeric" required min={0} step="0.5" value={form.wageDays} onChange={(e) => set("wageDays")(e.target.value)} />}
+              {(id) => <Input id={id} type="number" inputMode="numeric" required min={0.5} step="0.5" value={form.wageDays} onChange={(e) => set("wageDays")(e.target.value)} />}
             </Field>
             <Field label="Rate per day">
-              {(id) => <Input id={id} type="number" inputMode="numeric" required min={0} value={form.rate} onChange={(e) => set("rate")(e.target.value)} />}
+              {(id) => <Input id={id} type="number" inputMode="numeric" required min={1} value={form.rate} onChange={(e) => set("rate")(e.target.value)} />}
             </Field>
           </div>
         </>
@@ -113,8 +113,8 @@ function WorkPaymentForm({ personId, workPayment, onDone }: { personId: string; 
             <Field label="Stall number">{(id) => <Input id={id} value={form.stallNo} onChange={(e) => set("stallNo")(e.target.value)} />}</Field>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Size">{(id) => <Input id={id} type="number" inputMode="numeric" required min={0} step="0.01" value={form.size} onChange={(e) => set("size")(e.target.value)} />}</Field>
-            <Field label="Rate per size">{(id) => <Input id={id} type="number" inputMode="numeric" required min={0} value={form.rate} onChange={(e) => set("rate")(e.target.value)} />}</Field>
+            <Field label="Size">{(id) => <Input id={id} type="number" inputMode="numeric" required min={0.01} step="0.01" value={form.size} onChange={(e) => set("size")(e.target.value)} />}</Field>
+            <Field label="Rate per size">{(id) => <Input id={id} type="number" inputMode="numeric" required min={1} value={form.rate} onChange={(e) => set("rate")(e.target.value)} />}</Field>
           </div>
         </>
       )}

@@ -107,20 +107,20 @@ function StallForm({ labourId, exhibitionId, stall, onDone }: { labourId: string
           </Field>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Wage days">
-              {(id) => <Input id={id} type="number" inputMode="numeric" required min={0} step="0.5" value={form.wageDays} onChange={(e) => set("wageDays")(e.target.value)} />}
+              {(id) => <Input id={id} type="number" inputMode="numeric" required min={0.5} step="0.5" value={form.wageDays} onChange={(e) => set("wageDays")(e.target.value)} />}
             </Field>
             <Field label="Rate per day">
-              {(id) => <Input id={id} type="number" inputMode="numeric" required min={0} value={form.rate} onChange={(e) => set("rate")(e.target.value)} />}
+              {(id) => <Input id={id} type="number" inputMode="numeric" required min={1} value={form.rate} onChange={(e) => set("rate")(e.target.value)} />}
             </Field>
           </div>
         </>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Size (pms)">
-            {(id) => <Input id={id} type="number" inputMode="numeric" required min={0} step="0.01" value={form.pms} onChange={(e) => set("pms")(e.target.value)} />}
+            {(id) => <Input id={id} type="number" inputMode="numeric" required min={0.01} step="0.01" value={form.pms} onChange={(e) => set("pms")(e.target.value)} />}
           </Field>
           <Field label="Rate per pms">
-            {(id) => <Input id={id} type="number" inputMode="numeric" required min={0} value={form.rate} onChange={(e) => set("rate")(e.target.value)} />}
+            {(id) => <Input id={id} type="number" inputMode="numeric" required min={1} value={form.rate} onChange={(e) => set("rate")(e.target.value)} />}
           </Field>
         </div>
       )}

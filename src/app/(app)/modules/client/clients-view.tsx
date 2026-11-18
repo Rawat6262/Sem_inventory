@@ -4,13 +4,16 @@ import { ChevronRight, Handshake, Phone, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
-import { Button } from "@/components/ui";
+import { Button, Select } from "@/components/ui";
 import { Count, EmptyState, QueryState, SearchBox, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
 import { useMe } from "@/hooks/use-me";
 import { isGrantedModule, mayDelete, ownsRecordsOnly } from "@/lib/permissions";
 import {
   addedByName,
+  clientStatus,
   clientTotals,
+  DEAL_STATUS_LABELS,
+  DEAL_STATUSES,
   deleteClient,
   fmt,
   fmtMoney,
@@ -18,14 +21,17 @@ import {
   useClients,
   useClientsMutation,
   type Client,
+  type DealStatus,
 } from "@/lib/clients";
 import { ClientDialog } from "./_components/client-dialog";
+import { DealStatusBadge } from "./_components/deal-status-badge";
 
 export function ClientsView() {
   const clients = useClients();
   const me = useMe().data;
   const ownOnly = Boolean(me && (ownsRecordsOnly(me.role) || isGrantedModule(me.role, "client", me.extraModules)));
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<DealStatus | "">("");
   const [editing, setEditing] = useState<Client | null | "new">(null);
   const [deleting, setDeleting] = useState<Client | null>(null);
   const remove = useClientsMutation((id: string) => deleteClient(id));
@@ -41,14 +47,21 @@ export function ClientsView() {
     );
   }, [clients.data]);
 
+  const statusCounts = useMemo(() => {
+    const counts: Record<DealStatus, number> = { lead: 0, final: 0, fully_paid: 0 };
+    for (const c of clients.data ?? []) counts[clientStatus(c)] += 1;
+    return counts;
+  }, [clients.data]);
+
   const q = search.trim().toLowerCase();
   const list = (clients.data ?? []).filter(
     (c) =>
-      !q ||
-      c.clientName.toLowerCase().includes(q) ||
-      c.companyName?.toLowerCase().includes(q) ||
-      c.phoneNumber?.includes(q) ||
-      c.address?.toLowerCase().includes(q),
+      (!status || clientStatus(c) === status) &&
+      (!q ||
+        c.clientName.toLowerCase().includes(q) ||
+        c.companyName?.toLowerCase().includes(q) ||
+        c.phoneNumber?.includes(q) ||
+        c.address?.toLowerCase().includes(q)),
   );
 
   return (
@@ -63,7 +76,17 @@ export function ClientsView() {
           </div>
 
           <div className="mt-8 mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <SearchBox value={search} onChange={setSearch} placeholder="Search by name, company, phone or address" />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <SearchBox value={search} onChange={setSearch} placeholder="Search by name, company, phone or address" />
+              <Select aria-label="Filter by status" className="sm:w-48" value={status} onChange={(e) => setStatus(e.target.value as DealStatus | "")}>
+                <option value="">All statuses ({fmt(clients.data?.length)})</option>
+                {DEAL_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {DEAL_STATUS_LABELS[s]} ({fmt(statusCounts[s])})
+                  </option>
+                ))}
+              </Select>
+            </div>
             <Button onClick={() => setEditing("new")}>
               <Plus className="size-4" aria-hidden />
               Add client
@@ -84,6 +107,7 @@ export function ClientsView() {
                     <th className={th}>Company</th>
                     <th className={th}>Client</th>
                     <th className={th}>Phone</th>
+                    <th className={th}>Status</th>
                     {!ownOnly && <th className={th}>Added by</th>}
                     <th className={`${th} text-right`}>Exhibitions</th>
                     <th className={`${th} text-right`}>Deal</th>
@@ -110,6 +134,9 @@ export function ClientsView() {
                             <Phone className="size-3.5" aria-hidden />
                             {c.phoneNumber}
                           </span>
+                        </td>
+                        <td className={td}>
+                          <DealStatusBadge status={clientStatus(c)} />
                         </td>
                         {!ownOnly && <td className={`${td} text-muted`}>{addedByName(c) ?? "—"}</td>}
                         <td className={`${td} text-right tabular-nums`}>{fmt(c.exhibition.length)}</td>

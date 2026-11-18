@@ -71,7 +71,11 @@ function TransactionForm({ transaction, onDone }: { transaction?: Transaction | 
   const purposeNames = rows.map((r) => r.purpose.trim().toLowerCase());
   const hasDuplicate = new Set(purposeNames).size !== purposeNames.length;
   const rowsValid = rows.every((r) => r.purpose.trim() && Number(r.amount) > 0) && !hasDuplicate;
-  const valid = transaction ? rowsValid && remark.trim() : Boolean(exhibitionId) && Boolean(entityId) && rowsValid && remark.trim();
+  const alreadyPaid = transaction?.paid_amount ?? 0;
+  const belowPaid = Boolean(transaction) && total < alreadyPaid;
+  const valid = transaction
+    ? rowsValid && remark.trim() && !belowPaid
+    : Boolean(exhibitionId) && Boolean(entityId) && rowsValid && remark.trim();
 
   function updateRow(i: number, patch: Partial<DealPurpose>) {
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
@@ -215,8 +219,10 @@ function TransactionForm({ transaction, onDone }: { transaction?: Transaction | 
 
       <div className="rounded-lg bg-surface-2/60 px-3 py-2 text-sm">
         Total: <span className="font-semibold tabular-nums">{fmtMoney(total)}</span>
+        {alreadyPaid > 0 && <span className="text-muted"> · already paid {fmtMoney(alreadyPaid)}</span>}
       </div>
 
+      {belowPaid && <Alert>The total can&apos;t be less than what&apos;s already been paid ({fmtMoney(alreadyPaid)}).</Alert>}
       {saving.error && <Alert>{saving.error.message}</Alert>}
 
       <div className="flex justify-end gap-2 border-t border-line pt-4">

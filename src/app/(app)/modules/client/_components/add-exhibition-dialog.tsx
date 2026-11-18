@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Modal } from "@/components/modal";
 import { Alert, Button, Field, Input, Select } from "@/components/ui";
 import { addClientStall, useClientsMutation, useExhibitionsList, type ClientExhibitionEntry } from "@/lib/clients";
+import { StallMoneyFields, stallOverpaid } from "./stall-money-fields";
 
 type Props = { open: boolean; onClose: () => void; clientId: string; already: ClientExhibitionEntry[] };
 
@@ -65,24 +66,14 @@ function AddExhibitionForm({ clientId, already, onDone }: { clientId: string; al
         <Field label="Stall name">{(id) => <Input id={id} value={form.stall_name} onChange={(e) => set("stall_name")(e.target.value)} />}</Field>
       </div>
       <Field label="Stall size">{(id) => <Input id={id} value={form.stall_size} onChange={(e) => set("stall_size")(e.target.value)} placeholder="e.g. 6x6 sqmtr" />}</Field>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Field label="Deal amount">
-          {(id) => <Input id={id} type="number" inputMode="numeric" min={0} value={form.deal_amount} onChange={(e) => set("deal_amount")(e.target.value)} />}
-        </Field>
-        <Field label="Advance paid">
-          {(id) => <Input id={id} type="number" inputMode="numeric" min={0} value={form.advance_payment} onChange={(e) => set("advance_payment")(e.target.value)} />}
-        </Field>
-        <Field label="Received">
-          {(id) => <Input id={id} type="number" inputMode="numeric" min={0} value={form.received_payment} onChange={(e) => set("received_payment")(e.target.value)} />}
-        </Field>
-      </div>
+      <StallMoneyFields value={form} onChange={(k, v) => set(k)(v)} />
 
       {add.error && <Alert>{add.error.message}</Alert>}
       <div className="flex justify-end gap-2 border-t border-line pt-4">
         <Button type="button" variant="secondary" onClick={onDone} disabled={add.isPending}>
           Cancel
         </Button>
-        <Button type="submit" loading={add.isPending} disabled={!exhibitionId}>
+        <Button type="submit" loading={add.isPending} disabled={!exhibitionId || stallOverpaid(form)}>
           Book exhibition
         </Button>
       </div>

@@ -22,7 +22,7 @@ import {
   makeDesignFinal,
   removeClientStall,
   removeExhibitionFromClient,
-  STALL_STATUS_LABELS,
+  clientStatus,
   stallStatus,
   useClient,
   useClientsMutation,
@@ -32,15 +32,10 @@ import {
 } from "@/lib/clients";
 import { AddExhibitionDialog } from "../_components/add-exhibition-dialog";
 import { ClientDialog } from "../_components/client-dialog";
+import { DealStatusBadge } from "../_components/deal-status-badge";
 import { DesignDialog } from "../_components/design-dialog";
 import { StallDialog } from "../_components/stall-dialog";
 import { StallPaymentDialog } from "../_components/stall-payment-dialog";
-
-const STATUS_TONE: Record<string, string> = {
-  fully_paid: "text-success",
-  partially_paid: "text-accent",
-  pending: "text-muted",
-};
 
 export function ClientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -95,7 +90,10 @@ export function ClientDetail() {
 
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="text-xl font-semibold">{c.companyName || c.clientName}</h2>
+                <h2 className="flex flex-wrap items-center gap-2 text-xl font-semibold">
+                  {c.companyName || c.clientName}
+                  <DealStatusBadge status={clientStatus(c)} />
+                </h2>
                 <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
                   {c.companyName && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium">{c.clientName}</span>}
                   <span className="inline-flex items-center gap-1">
@@ -202,7 +200,9 @@ export function ClientDetail() {
                                     <div className="font-medium">{stall.stall_name || stall.stall_no || "Stall"}</div>
                                     {stall.stall_size && <div className="text-xs text-muted">{stall.stall_size}</div>}
                                   </td>
-                                  <td className={`${td} text-xs font-medium ${STATUS_TONE[status]}`}>{STALL_STATUS_LABELS[status]}</td>
+                                  <td className={td}>
+                                    <DealStatusBadge status={status} />
+                                  </td>
                                   <td className={`${td} text-right tabular-nums`}>{fmtMoney(stall.deal_amount)}</td>
                                   <td className={`${td} text-right`}>
                                     <Count n={stall.total_paid} tone="success" money />

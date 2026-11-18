@@ -80,19 +80,43 @@ export function clientTotals(c: Client) {
   );
 }
 
-export type StallStatus = "fully_paid" | "partially_paid" | "pending";
+/**
+ * Where a deal stands:
+ * - lead: details and/or deal amount only, nothing paid yet
+ * - final: an advance or payment came in, but some amount is still due
+ * - fully_paid: nothing remaining
+ */
+export type DealStatus = "lead" | "final" | "fully_paid";
 
-export function stallStatus(s: ClientStall): StallStatus {
-  if (s.deal_amount > 0 && s.remaining_payment <= 0) return "fully_paid";
-  if (s.total_paid > 0) return "partially_paid";
-  return "pending";
+export const DEAL_STATUSES: DealStatus[] = ["lead", "final", "fully_paid"];
+
+export const DEAL_STATUS_LABELS: Record<DealStatus, string> = {
+  lead: "Lead",
+  final: "Final",
+  fully_paid: "Fully paid",
+};
+
+export const DEAL_STATUS_HINTS: Record<DealStatus, string> = {
+  lead: "Deal agreed, nothing paid yet",
+  final: "Payment received, amount still due",
+  fully_paid: "Nothing remaining",
+};
+
+function dealStatusOf(deal: number, paid: number, remaining: number): DealStatus {
+  if (deal > 0 && remaining <= 0) return "fully_paid";
+  if (paid > 0) return "final";
+  return "lead";
 }
 
-export const STALL_STATUS_LABELS: Record<StallStatus, string> = {
-  fully_paid: "Fully paid",
-  partially_paid: "Partially paid",
-  pending: "Pending",
-};
+export function stallStatus(s: ClientStall): DealStatus {
+  return dealStatusOf(s.deal_amount || 0, s.total_paid || 0, s.remaining_payment || 0);
+}
+
+/** A client's status across all their stalls (no stalls yet counts as a lead). */
+export function clientStatus(c: Client): DealStatus {
+  const t = clientTotals(c);
+  return dealStatusOf(t.deal, t.paid, t.remaining);
+}
 
 export function designOf(d: Design | string): Design | null {
   return typeof d === "object" ? d : null;

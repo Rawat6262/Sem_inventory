@@ -59,7 +59,7 @@ function QuotationForm({ onDone }: { onDone: () => void }) {
       </Field>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_8rem]">
         <Field label="Venue (optional)">{(id) => <Input id={id} value={venue} onChange={(e) => setVenue(e.target.value)} />}</Field>
-        <Field label="GST %">{(id) => <Input id={id} type="number" inputMode="numeric" min={0} value={gstPercent} onChange={(e) => setGstPercent(e.target.value)} />}</Field>
+        <Field label="GST %">{(id) => <Input id={id} type="number" inputMode="numeric" min={0} max={28} value={gstPercent} onChange={(e) => setGstPercent(e.target.value)} />}</Field>
       </div>
 
       {save.error && <Alert>{save.error.message}</Alert>}

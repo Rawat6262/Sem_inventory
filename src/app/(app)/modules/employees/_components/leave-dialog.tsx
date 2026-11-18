@@ -7,6 +7,13 @@ import { addLeaveDate, LEAVE_TYPES, useEmployeesMutation, type AddLeaveInput, ty
 
 type Props = { open: boolean; onClose: () => void; employeeId: string; month: number; year: number };
 
+// First and last day of the month, as YYYY-MM-DD, so the calendar stays inside it.
+function monthBounds(month: number, year: number) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const lastDay = new Date(year, month, 0).getDate();
+  return { min: `${year}-${pad(month)}-01`, max: `${year}-${pad(month)}-${pad(lastDay)}` };
+}
+
 function defaultDate(month: number, year: number) {
   const today = new Date();
   if (today.getMonth() + 1 === month && today.getFullYear() === year) return today.toISOString().slice(0, 10);
@@ -37,7 +44,7 @@ function LeaveForm({ employeeId, month, year, onDone }: { employeeId: string; mo
       <p className="text-sm text-muted">
         Adds one date to this employee&apos;s leave record for that month. Add again for another date.
       </p>
-      <Field label="Date">{(id) => <Input id={id} type="date" required value={date} onChange={(e) => setDate(e.target.value)} />}</Field>
+      <Field label="Date">{(id) => <Input id={id} type="date" required min={monthBounds(month, year).min} max={monthBounds(month, year).max} value={date} onChange={(e) => setDate(e.target.value)} />}</Field>
       <Field label="Leave type">
         {(id) => (
           <Select id={id} value={leaveType} onChange={(e) => setLeaveType(e.target.value as LeaveType)}>
