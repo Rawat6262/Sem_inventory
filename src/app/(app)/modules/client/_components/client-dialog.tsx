@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Modal } from "@/components/modal";
-import { Alert, Button, Field, Input } from "@/components/ui";
+import { Alert, Button, Field, Input, PhoneInput } from "@/components/ui";
 import { saveClient, useClientsMutation, type Client, type ClientInput } from "@/lib/clients";
 
 type Props = { open: boolean; onClose: () => void; client?: Client | null };
@@ -50,7 +50,7 @@ function ClientForm({ client, onDone }: { client?: Client | null; onDone: () => 
         {(id) => <Input id={id} required value={form.clientName} onChange={(e) => set("clientName")(e.target.value)} placeholder="Ramesh Kumar" />}
       </Field>
       <Field label="Phone number">
-        {(id) => <Input id={id} type="tel" inputMode="numeric" required value={form.phoneNumber} onChange={(e) => set("phoneNumber")(e.target.value)} />}
+        {(id) => <PhoneInput id={id} required value={form.phoneNumber} onValueChange={set("phoneNumber")} />}
       </Field>
       <Field label="Address (optional)">{(id) => <Input id={id} value={form.address} onChange={(e) => set("address")(e.target.value)} />}</Field>
 

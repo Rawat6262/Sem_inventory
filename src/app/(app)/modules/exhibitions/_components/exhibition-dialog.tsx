@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { LocationFields } from "@/components/location-fields";
 import { Modal } from "@/components/modal";
-import { Alert, Button, Field, Input, Textarea } from "@/components/ui";
+import { Alert, Button, Field, Input, PhoneInput, Textarea } from "@/components/ui";
 import { saveExhibition, useExhibitionsMutation, type Exhibition, type ExhibitionInput } from "@/lib/exhibitions";
 
 type Props = { open: boolean; onClose: () => void; exhibition?: Exhibition | null };
@@ -38,6 +39,7 @@ function ExhibitionForm({ exhibition, onDone }: { exhibition?: Exhibition | null
   const save = useExhibitionsMutation((input: ExhibitionInput & { id?: string }) => saveExhibition(input));
 
   const dateOrderInvalid = Boolean(form.startDate && form.endDate && form.endDate < form.startDate);
+  const isIndia = form.country.trim().toLowerCase() === "india";
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -75,25 +77,46 @@ function ExhibitionForm({ exhibition, onDone }: { exhibition?: Exhibition | null
         </Field>
         <Field label="End date" hint={dateOrderInvalid ? "Can't be before the start date." : undefined}>
           {(id) => (
-            <Input id={id} type="date" required value={form.endDate} onChange={(e) => set("endDate")(e.target.value)} aria-invalid={dateOrderInvalid || undefined} />
+            <Input
+              id={id}
+              type="date"
+              required
+              min={form.startDate || undefined}
+              value={form.endDate}
+              onChange={(e) => set("endDate")(e.target.value)}
+              aria-invalid={dateOrderInvalid || undefined}
+            />
           )}
         </Field>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Field label="City">{(id) => <Input id={id} required value={form.city} onChange={(e) => set("city")(e.target.value)} />}</Field>
-        <Field label="State">{(id) => <Input id={id} required value={form.state} onChange={(e) => set("state")(e.target.value)} />}</Field>
-        <Field label="Country">{(id) => <Input id={id} required value={form.country} onChange={(e) => set("country")(e.target.value)} />}</Field>
+        <LocationFields
+          value={{ country: form.country, state: form.state, city: form.city }}
+          onChange={(loc) => setForm((f) => ({ ...f, ...loc }))}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Organiser (optional)">{(id) => <Input id={id} value={form.organiser} onChange={(e) => set("organiser")(e.target.value)} />}</Field>
-        <Field label="Zip code (optional)">{(id) => <Input id={id} value={form.zipCode} onChange={(e) => set("zipCode")(e.target.value)} />}</Field>
+        <Field label={isIndia ? "PIN code (optional)" : "Zip code (optional)"} hint={isIndia ? "6 digits" : undefined}>
+          {(id) => (
+            <Input
+              id={id}
+              inputMode="numeric"
+              maxLength={isIndia ? 6 : 10}
+              pattern={isIndia ? "\\d{6}" : "[A-Za-z0-9 -]{3,10}"}
+              title={isIndia ? "Enter the 6-digit PIN code" : "Enter a valid zip code"}
+              value={form.zipCode}
+              onChange={(e) => set("zipCode")(isIndia ? e.target.value.replace(/\D/g, "") : e.target.value)}
+            />
+          )}
+        </Field>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Email (optional)">{(id) => <Input id={id} type="email" value={form.email} onChange={(e) => set("email")(e.target.value)} />}</Field>
-        <Field label="Phone (optional)">{(id) => <Input id={id} type="tel" value={form.phone} onChange={(e) => set("phone")(e.target.value)} />}</Field>
+        <Field label="Email (optional)">{(id) => <Input id={id} type="email" autoComplete="email" value={form.email} onChange={(e) => set("email")(e.target.value)} />}</Field>
+        <Field label="Phone (optional)" hint="10 to 12 digits">{(id) => <PhoneInput id={id} value={form.phone} onValueChange={set("phone")} />}</Field>
       </div>
 
       <Field label="Remarks (optional)">{(id) => <Textarea id={id} rows={2} value={form.remarks} onChange={(e) => set("remarks")(e.target.value)} />}</Field>

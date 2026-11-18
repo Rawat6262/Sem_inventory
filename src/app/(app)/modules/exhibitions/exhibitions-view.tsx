@@ -15,7 +15,7 @@ import {
   th,
 } from "@/components/data-ui";
 import { useMe } from "@/hooks/use-me";
-import { canManageExhibitions, canOpen, mayDelete } from "@/lib/permissions";
+import { canManageExhibitions, canOpen, mayDelete, ownsRecordsOnly } from "@/lib/permissions";
 import {
   dateRange,
   deleteExhibition,
@@ -121,7 +121,7 @@ export function ExhibitionsView() {
                     <th className={th}>City</th>
                     <th className={th}>Dates</th>
                     {showClients && (
-                      <th className={`${th} text-right`}>Clients</th>
+                      <th className={`${th} text-right`}>{me && ownsRecordsOnly(me.role) ? "Your clients" : "Clients"}</th>
                     )}
                     <th className={th}>
                       <span className="sr-only">Actions</span>

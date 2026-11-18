@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LocationFields } from "@/components/location-fields";
 import { Modal } from "@/components/modal";
 import { Alert, Button, Field, Input, Textarea } from "@/components/ui";
 import { saveWarehouse, useStockMutation, type Warehouse, type WarehouseInput } from "@/lib/stock";
@@ -60,9 +61,10 @@ function WarehouseForm({ warehouse, nextNo, onDone }: { warehouse?: Warehouse | 
         {(id) => <Textarea id={id} required rows={2} value={form.address} onChange={(e) => set("address")(e.target.value)} />}
       </Field>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Field label="City">{(id) => <Input id={id} required value={form.city} onChange={(e) => set("city")(e.target.value)} />}</Field>
-        <Field label="State">{(id) => <Input id={id} required value={form.state} onChange={(e) => set("state")(e.target.value)} />}</Field>
-        <Field label="Country">{(id) => <Input id={id} required value={form.country} onChange={(e) => set("country")(e.target.value)} />}</Field>
+        <LocationFields
+          value={{ country: form.country, state: form.state, city: form.city }}
+          onChange={(loc) => setForm((f) => ({ ...f, ...loc }))}
+        />
       </div>
       {save.error && <Alert>{duplicateMessage(save.error.message)}</Alert>}
       <div className="flex justify-end gap-2 border-t border-line pt-4">

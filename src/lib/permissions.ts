@@ -179,9 +179,9 @@ export const MODULES: ModuleDef[] = [
 
 const DENIED: Record<Role, ModuleKey[]> = {
   admin: [],
-  // Employees work in stock, their own clients and their own quotations only.
+  // Employees work in stock, exhibitions (edit/delete their own), their own
+  // clients and their own quotations only.
   employee: [
-    "exhibitions",
     "contractor",
     "supervisor",
     "manpower",
@@ -261,13 +261,18 @@ export function canDeleteOwned(
   return Boolean(owner) && owner === me._id;
 }
 
-/** Employees see all stock but only edit the warehouses and products they added. */
+/**
+ * Employees see all stock and exhibitions but only edit the warehouses,
+ * products and exhibitions they added.
+ */
 export function canEditStock(
   me: { _id: string; role: string },
   createdBy: string | { _id: string } | null | undefined,
 ): boolean {
   return me.role !== "employee" || canDeleteOwned(me, createdBy);
 }
+
+export const canEditOwnRecord = canEditStock;
 
 export function modulesFor(role: string, extra?: readonly string[]): ModuleDef[] {
   return MODULES.filter((m) => canOpen(role, m.key, extra));

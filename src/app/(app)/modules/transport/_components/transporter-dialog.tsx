@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { LocationFields } from "@/components/location-fields";
 import { Modal } from "@/components/modal";
-import { Alert, Button, Field, Input, Select } from "@/components/ui";
+import { Alert, Button, Field, Input, PhoneInput, Select } from "@/components/ui";
 import { PAYMENT_MODES, saveTransporter, useTransportMutation, type Transporter, type TransporterInput } from "@/lib/transport";
 
 type Props = { open: boolean; onClose: () => void; transporter?: Transporter | null };
@@ -49,13 +50,14 @@ function TransporterForm({ transporter, onDone }: { transporter?: Transporter | 
     <form onSubmit={submit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_10rem]">
         <Field label="Name">{(id) => <Input id={id} required value={form.transporter_name} onChange={(e) => set("transporter_name")(e.target.value)} />}</Field>
-        <Field label="Phone number">{(id) => <Input id={id} type="tel" inputMode="numeric" required value={form.phone_number} onChange={(e) => set("phone_number")(e.target.value)} />}</Field>
+        <Field label="Phone number">{(id) => <PhoneInput id={id} required value={form.phone_number} onValueChange={set("phone_number")} />}</Field>
       </div>
       <Field label="Address">{(id) => <Input id={id} required value={form.address} onChange={(e) => set("address")(e.target.value)} />}</Field>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Field label="City">{(id) => <Input id={id} required value={form.city} onChange={(e) => set("city")(e.target.value)} />}</Field>
-        <Field label="State">{(id) => <Input id={id} required value={form.state} onChange={(e) => set("state")(e.target.value)} />}</Field>
-        <Field label="Country">{(id) => <Input id={id} required value={form.country} onChange={(e) => set("country")(e.target.value)} />}</Field>
+        <LocationFields
+          value={{ country: form.country, state: form.state, city: form.city }}
+          onChange={(loc) => setForm((f) => ({ ...f, ...loc }))}
+        />
       </div>
       <Field label="Preferred payment mode">
         {(id) => (

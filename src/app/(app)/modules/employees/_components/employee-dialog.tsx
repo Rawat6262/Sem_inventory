@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Modal } from "@/components/modal";
-import { Alert, Button, Field, Input, Select } from "@/components/ui";
+import { Alert, Button, Field, Input, PhoneInput, Select, todayInput } from "@/components/ui";
 import { EMPLOYEE_STATUSES, GENDERS, saveEmployee, useEmployeesMutation, type Employee, type EmployeeInput } from "@/lib/employees";
 
 type Props = { open: boolean; onClose: () => void; employee?: Employee | null };
@@ -72,7 +72,7 @@ function EmployeeForm({ employee, onDone }: { employee?: Employee | null; onDone
     <form onSubmit={submit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Name">{(id) => <Input id={id} required value={form.name} onChange={(e) => set("name")(e.target.value)} />}</Field>
-        <Field label="Phone">{(id) => <Input id={id} type="tel" required value={form.phone} onChange={(e) => set("phone")(e.target.value)} />}</Field>
+        <Field label="Phone">{(id) => <PhoneInput id={id} required value={form.phone} onValueChange={set("phone")} />}</Field>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Email (optional)">{(id) => <Input id={id} type="email" value={form.email} onChange={(e) => set("email")(e.target.value)} />}</Field>
@@ -91,7 +91,9 @@ function EmployeeForm({ employee, onDone }: { employee?: Employee | null; onDone
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Company">{(id) => <Input id={id} required value={form.company} onChange={(e) => set("company")(e.target.value)} />}</Field>
-        <Field label="Joining date">{(id) => <Input id={id} type="date" required value={form.joining_date} onChange={(e) => set("joining_date")(e.target.value)} />}</Field>
+        <Field label="Joining date">
+          {(id) => <Input id={id} type="date" required max={todayInput()} value={form.joining_date} onChange={(e) => set("joining_date")(e.target.value)} />}
+        </Field>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label={employee ? "Current salary" : "Starting salary (optional)"}>

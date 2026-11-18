@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Lock, UserRound } from "lucide-react";
 import { useState } from "react";
 import { EmptyState, QueryState } from "@/components/data-ui";
-import { Alert, Button, Field, Input, Select } from "@/components/ui";
+import { Alert, Button, Field, Input, PhoneInput, Select, todayInput } from "@/components/ui";
 import { useMe } from "@/hooks/use-me";
 import { hasProfile } from "@/lib/permissions";
 import {
@@ -141,7 +141,7 @@ function ProfileForm({ employee }: { employee: Employee }) {
         <legend className="px-1 text-sm font-medium">Personal details</legend>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Full name">{(id) => <Input id={id} required value={form.name} onChange={(e) => set("name")(e.target.value)} />}</Field>
-          <Field label="Phone">{(id) => <Input id={id} type="tel" required value={form.phone} onChange={(e) => set("phone")(e.target.value)} />}</Field>
+          <Field label="Phone">{(id) => <PhoneInput id={id} required value={form.phone} onValueChange={set("phone")} />}</Field>
           <Field label="Gender">
             {(id) => (
               <Select id={id} value={form.gender} onChange={(e) => set("gender")(e.target.value)}>
@@ -156,7 +156,7 @@ function ProfileForm({ employee }: { employee: Employee }) {
           </Field>
           <Field label="Company">{(id) => <Input id={id} required value={form.company} onChange={(e) => set("company")(e.target.value)} />}</Field>
           <Field label="Joining date" hint={employee.joining_date ? `Currently ${fmtDate(employee.joining_date)}` : undefined}>
-            {(id) => <Input id={id} type="date" required value={form.joining_date} onChange={(e) => set("joining_date")(e.target.value)} />}
+            {(id) => <Input id={id} type="date" required max={todayInput()} value={form.joining_date} onChange={(e) => set("joining_date")(e.target.value)} />}
           </Field>
         </div>
       </fieldset>

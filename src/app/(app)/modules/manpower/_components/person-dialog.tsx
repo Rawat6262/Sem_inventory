@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Modal } from "@/components/modal";
-import { Alert, Button, Field, Input } from "@/components/ui";
+import { Alert, Button, Field, Input, PhoneInput } from "@/components/ui";
 import { savePerson, useManpowerMutation, type Person, type PersonInput } from "@/lib/manpower";
 
 type Props = { open: boolean; onClose: () => void; person?: Person | null };
@@ -28,7 +28,7 @@ function PersonForm({ person, onDone }: { person?: Person | null; onDone: () => 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
       <Field label="Name">{(id) => <Input id={id} required autoFocus value={name} onChange={(e) => setName(e.target.value)} />}</Field>
-      <Field label="Phone (optional)">{(id) => <Input id={id} type="tel" inputMode="numeric" value={phone} onChange={(e) => setPhone(e.target.value)} />}</Field>
+      <Field label="Phone (optional)">{(id) => <PhoneInput id={id} value={phone} onValueChange={setPhone} />}</Field>
       {save.error && <Alert>{save.error.message}</Alert>}
       <div className="flex justify-end gap-2 border-t border-line pt-4">
         <Button type="button" variant="secondary" onClick={onDone} disabled={save.isPending}>

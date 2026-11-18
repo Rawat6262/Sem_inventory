@@ -63,6 +63,34 @@ export function Input({ className, ...rest }: InputHTMLAttributes<HTMLInputEleme
   return <input {...rest} className={cn(fieldClass, className)} />;
 }
 
+type PhoneInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type"> & {
+  value: string;
+  onValueChange: (digits: string) => void;
+};
+
+/** Phone number: digits only, 10–12 long (mobile, or landline with STD code). */
+export function PhoneInput({ value, onValueChange, ...rest }: PhoneInputProps) {
+  return (
+    <Input
+      {...rest}
+      type="tel"
+      inputMode="numeric"
+      autoComplete="tel-national"
+      maxLength={12}
+      pattern="\d{10,12}"
+      title="Enter 10 to 12 digits"
+      value={value}
+      onChange={(e) => onValueChange(e.target.value.replace(/\D/g, ""))}
+    />
+  );
+}
+
+/** Today as YYYY-MM-DD, for the max/min of date inputs. */
+export function todayInput(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export function Textarea({ className, ...rest }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea rows={3} {...rest} className={cn(fieldClass, "h-auto py-2", className)} />;
 }

@@ -29,7 +29,7 @@ import {
 } from "@/components/data-ui";
 import { useMe } from "@/hooks/use-me";
 import { ApiError } from "@/lib/api";
-import { canManageExhibitions, canOpen, mayDelete } from "@/lib/permissions";
+import { canEditOwnRecord, canManageExhibitions, canOpen, isGrantedModule, mayDelete, ownsRecordsOnly } from "@/lib/permissions";
 import {
   dateRange,
   deleteExhibition,
@@ -50,6 +50,9 @@ export function ExhibitionDetail() {
   // Roles without the Clients module (e.g. supervisor) see the exhibition only.
   const showClients = Boolean(me && canOpen(me.role, "client", me.extraModules));
   const manage = Boolean(me && canManageExhibitions(me.role));
+  const ownClientsOnly = Boolean(
+    me && (ownsRecordsOnly(me.role) || isGrantedModule(me.role, "client", me.extraModules)),
+  );
   const clients = useExhibitionClients(id, showClients);
 
   const [editing, setEditing] = useState(false);
@@ -135,7 +138,7 @@ export function ExhibitionDetail() {
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
-                {manage && (
+                {me && manage && canEditOwnRecord(me, e.createdBy) && (
                   <Button variant="secondary" onClick={() => setEditing(true)}>
                     <Pencil className="size-4" aria-hidden />
                     Edit
@@ -181,8 +184,12 @@ export function ExhibitionDetail() {
                 </div>
 
                 <Section
-                  title="Clients booked"
-                  description="Who's taken a stall at this exhibition"
+                  title={ownClientsOnly ? "Your clients booked" : "Clients booked"}
+                  description={
+                    ownClientsOnly
+                      ? "Only clients you added are shown here."
+                      : "Who's taken a stall at this exhibition"
+                  }
                 >
                   {rows.length === 0 ? (
                     <EmptyState

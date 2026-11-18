@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Modal } from "@/components/modal";
-import { Alert, Button, Field, Input, Select } from "@/components/ui";
+import { Alert, Button, Field, Input, PhoneInput, Select } from "@/components/ui";
 import { saveContractor, useContractorsMutation, type Contractor, type ContractorInput } from "@/lib/contractors";
 
 const LABOUR_TYPES = ["Carpenter", "Electrician", "Painter", "Helper", "Fabricator", "Driver", "Other"];
@@ -48,16 +48,7 @@ function ContractorForm({ contractor, onDone }: { contractor?: Contractor | null
       </Field>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Phone number">
-          {(id) => (
-            <Input
-              id={id}
-              type="tel"
-              inputMode="numeric"
-              required
-              value={form.phone_number}
-              onChange={(e) => set("phone_number")(e.target.value)}
-            />
-          )}
+          {(id) => <PhoneInput id={id} required value={form.phone_number} onValueChange={set("phone_number")} />}
         </Field>
         <Field label="Type">
           {(id) => (
