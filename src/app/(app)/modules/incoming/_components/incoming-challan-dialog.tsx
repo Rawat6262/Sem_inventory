@@ -1,10 +1,12 @@
 "use client";
 
 import { AlertTriangle, Plus, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Modal } from "@/components/modal";
 import { Alert, Button, Field, Input, Select, Textarea } from "@/components/ui";
 import {
+  challanPrintHref,
   createIncomingChallan,
   fmt,
   useChallanMutation,
@@ -58,6 +60,8 @@ function IncomingChallanForm({ onDone }: { onDone: () => void }) {
   const [vehicleNo, setVehicleNo] = useState("");
   const [purposeRows, setPurposeRows] = useState<DealPurpose[]>([{ purpose: "transportation", amount: 0 }]);
   const [remarks, setRemarks] = useState("");
+  const [goodsValue, setGoodsValue] = useState("");
+  const router = useRouter();
 
   const save = useChallanMutation("incoming", createIncomingChallan);
 
@@ -85,7 +89,8 @@ function IncomingChallanForm({ onDone }: { onDone: () => void }) {
   const rowErrors = activeRows.some((r) => rowProblem(r) !== null);
   const purposeNames = purposeRows.map((r) => r.purpose.trim().toLowerCase());
   const purposesValid = purposeRows.every((r) => r.purpose.trim() && Number(r.amount) > 0) && new Set(purposeNames).size === purposeNames.length;
-  const valid = Boolean(exhibitionId && warehouseId && transporterId && vehicleNo.trim()) && activeRows.length > 0 && !rowErrors && purposesValid;
+  const goodsValueValid = goodsValue === "" || Number(goodsValue) >= 0;
+  const valid = Boolean(exhibitionId && warehouseId && transporterId && vehicleNo.trim()) && activeRows.length > 0 && !rowErrors && purposesValid && goodsValueValid;
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -107,8 +112,15 @@ function IncomingChallanForm({ onDone }: { onDone: () => void }) {
         items,
         purposes: purposeRows.map((r) => ({ purpose: r.purpose.trim(), amount: Number(r.amount) })),
         remarks: remarks.trim() || undefined,
+        goods_value: goodsValue === "" ? undefined : Number(goodsValue),
       },
-      { onSuccess: onDone },
+      {
+        // Straight to the printable return letter + delivery challan.
+        onSuccess: (res) => {
+          onDone();
+          router.push(challanPrintHref("incoming", res.data._id, true));
+        },
+      },
     );
   }
 
@@ -233,6 +245,10 @@ function IncomingChallanForm({ onDone }: { onDone: () => void }) {
           </div>
         )}
       </div>
+
+      <Field label="Total value of goods (optional)" hint="Printed on the delivery challan, in rupees." className="sm:w-64">
+        {(id) => <Input id={id} type="number" inputMode="numeric" min={0} value={goodsValue} onChange={(e) => setGoodsValue(e.target.value)} placeholder="e.g. 174000" aria-invalid={!goodsValueValid || undefined} />}
+      </Field>
 
       <Field label="Remarks (optional)">{(id) => <Textarea id={id} rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} />}</Field>
 

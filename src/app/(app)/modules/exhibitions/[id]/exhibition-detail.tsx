@@ -226,15 +226,16 @@ export function ExhibitionDetail() {
                               className="hover:bg-surface-2/40"
                             >
                               <td className={td}>
+                                {/* Company first, the contact person under it. */}
                                 <Link
                                   href={`/modules/client/${r.clientId}`}
                                   className="font-medium hover:text-accent hover:underline"
                                 >
-                                  {r.clientName}
+                                  {r.companyName || r.clientName}
                                 </Link>
                                 {r.companyName && (
                                   <div className="text-xs text-muted">
-                                    {r.companyName}
+                                    {r.clientName}
                                   </div>
                                 )}
                               </td>

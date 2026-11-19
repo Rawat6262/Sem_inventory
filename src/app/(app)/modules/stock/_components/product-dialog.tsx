@@ -56,6 +56,7 @@ function ProductForm({ product, warehouseId, onDone }: { product?: Product | nul
     no_of_item: product ? String(product.no_of_item) : "",
     warehouse: product?.warehouse ?? warehouseId ?? "",
     vendor: vendorId(product?.vendor),
+    hsn_code: product?.hsn_code ?? "",
     remark: product?.remark ?? "",
   });
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -81,6 +82,7 @@ function ProductForm({ product, warehouseId, onDone }: { product?: Product | nul
         no_of_item: total,
         warehouse: form.warehouse,
         ...(form.vendor ? { vendor: form.vendor } : {}),
+        hsn_code: form.hsn_code.trim(),
         ...(product ? { remark: form.remark.trim() } : {}),
       },
       { onSuccess: onDone },
@@ -171,18 +173,23 @@ function ProductForm({ product, warehouseId, onDone }: { product?: Product | nul
       </div>
       {product && <p className="-mt-2 text-xs text-muted">To move stock to another warehouse, use Transfer.</p>}
 
-      <Field label="Vendor (optional)">
-        {(id) => (
-          <Select id={id} value={form.vendor} onChange={(e) => set("vendor")(e.target.value)} disabled={vendors.isPending}>
-            <option value="">{vendors.isPending ? "Loading…" : "No vendor"}</option>
-            {vendors.data?.map((v) => (
-              <option key={v._id} value={v._id}>
-                {v.vendorName}
-              </option>
-            ))}
-          </Select>
-        )}
-      </Field>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_10rem]">
+        <Field label="Vendor (optional)">
+          {(id) => (
+            <Select id={id} value={form.vendor} onChange={(e) => set("vendor")(e.target.value)} disabled={vendors.isPending}>
+              <option value="">{vendors.isPending ? "Loading…" : "No vendor"}</option>
+              {vendors.data?.map((v) => (
+                <option key={v._id} value={v._id}>
+                  {v.vendorName}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+        <Field label="HSN code (optional)" hint="Printed on delivery challans.">
+          {(id) => <Input id={id} inputMode="numeric" maxLength={10} value={form.hsn_code} onChange={(e) => set("hsn_code")(e.target.value)} placeholder="e.g. 9403" />}
+        </Field>
+      </div>
 
       {product && (
         <Field label="Remark">{(id) => <Textarea id={id} rows={2} value={form.remark} onChange={(e) => set("remark")(e.target.value)} />}</Field>

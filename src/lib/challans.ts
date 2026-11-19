@@ -26,7 +26,7 @@ export type PendingDocument = {
   items: PendingItem[];
 };
 
-export type OutgoingItemInput = { item_id: string; quantity: number; remark?: string };
+export type OutgoingItemInput = { item_id: string; quantity: number; hsn_code?: string; remark?: string };
 export type IncomingItemInput = { item_id: string; quantity: number; lost?: number; dead?: number; remark?: string };
 
 export type ChallanItem = { item_id: string; item_name: string; quantity: number; received_quantity: number; lost?: number; dead?: number; remark: string };
@@ -46,6 +46,7 @@ export type Challan = {
   vehicle_no: string;
   items: ChallanItem[];
   createdAt: string;
+  readOnly?: boolean; // supervisors: someone else's challan (id + a few fields only)
 };
 
 export type MonthRow = {
@@ -61,6 +62,8 @@ export type MonthRow = {
 };
 
 export type MonthChallanRow = {
+  _id?: string;
+  readOnly?: boolean; // supervisors: someone else's challan, can't be opened
   document_number: string;
   date: string;
   exhibition_name: string;
@@ -86,7 +89,7 @@ export const fmt = (n: number | null | undefined) => numberFormat.format(n ?? 0)
 const dateFormat = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" });
 export const fmtDate = (d: string | null | undefined) => (d ? dateFormat.format(new Date(d)) : "—");
 
-type Direction = "outgoing" | "incoming";
+export type Direction = "outgoing" | "incoming";
 const paths = (dir: Direction) => ({
   create: dir === "outgoing" ? "createoutgoingdocument" : "createincomingdocument",
   search: dir === "outgoing" ? "searchoutgoingchallan" : "searchincomingchallan",
@@ -130,7 +133,7 @@ export function usePendingItems(warehouseId: string, exhibitionId: string) {
   });
 }
 
-export function useChallanMutation<TInput>(dir: Direction, fn: (input: TInput) => Promise<unknown>) {
+export function useChallanMutation<TInput, TResult = unknown>(dir: Direction, fn: (input: TInput) => Promise<TResult>) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: fn,
@@ -146,8 +149,41 @@ export type NewOutgoingInput = {
   items: OutgoingItemInput[];
   purposes: DealPurpose[];
   remarks?: string;
+  goods_value?: number; // "Total value of goods" on the printed challan
 };
 export const createOutgoingChallan = (body: NewOutgoingInput) => api<{ data: Challan }>("createoutgoingdocument", { method: "POST", body });
+
+// ─── Printable challan (letter + delivery challan, 2 A4 pages) ─────────────
+// Outgoing: transport letter. Incoming: return letter, plus the warehouse the
+// goods are going back to.
+
+export type PrintableChallan = {
+  _id: string;
+  document_number: string;
+  date: string;
+  exhibition_name: string;
+  exhibition_venue: string;
+  exhibition_date: string;
+  exhibition_endingdate: string;
+  gst_number?: string;
+  vehicle_no: string;
+  goods_value?: number | null;
+  exhibition: { name: string; venue: string; city: string; state: string; zipCode: string } | null;
+  warehouse?: { address: string; city: string; state: string }; // incoming only
+  items: { item_id: string; item_name: string; quantity: number; received_quantity?: number; unit: string; hsn_code: string }[];
+};
+
+/** Page that shows (and prints) the 2-page A4 sheet for one challan. */
+export const challanPrintHref = (dir: Direction, id: string, autoPrint = false) => `/print/${dir}/${id}${autoPrint ? "?print=1" : ""}`;
+
+export function useChallanPrint(dir: Direction, id: string) {
+  return useQuery({
+    queryKey: ["challans", dir, "print", id] as const,
+    queryFn: async () => (await api<{ data: PrintableChallan }>(`${dir}-challan-print/${id}`)).data,
+    enabled: Boolean(id),
+    retry: false,
+  });
+}
 
 export type NewIncomingInput = {
   exhibition_id: string;
@@ -157,5 +193,6 @@ export type NewIncomingInput = {
   items: IncomingItemInput[];
   purposes: DealPurpose[];
   remarks?: string;
+  goods_value?: number; // "Total value of goods" on the printed challan
 };
 export const createIncomingChallan = (body: NewIncomingInput) => api<{ data: Challan }>("createincomingdocument", { method: "POST", body });

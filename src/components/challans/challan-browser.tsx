@@ -5,13 +5,15 @@
 // one month for its challans) and a keyword search. Used by both the
 // Outgoing and Incoming challans modules.
 
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Printer, Search } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Button, Input } from "@/components/ui";
 import { EmptyNote, QueryState, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
 import {
   fmt,
   fmtDate,
+  challanPrintHref,
   useMonthDetail,
   useMonthlySummary,
   useSearchChallans,
@@ -58,7 +60,7 @@ export function ChallanBrowser({ dir }: { dir: Direction }) {
       </form>
 
       {search.isPending ? null : search.data ? (
-        <SearchResults keyword={keyword} challans={search.data.data} />
+        <SearchResults dir={dir} keyword={keyword} challans={search.data.data} />
       ) : open ? (
         <MonthView dir={dir} detail={detail} onBack={() => setOpen(null)} />
       ) : (
@@ -163,6 +165,7 @@ function MonthView({
                           <th className={`${th} text-right`}>Items</th>
                           <th className={`${th} text-right`}>Quantity</th>
                           {dir === "incoming" && <th className={`${th} text-right`}>Lost/dead</th>}
+                          <ActionsHeader />
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-line">
@@ -180,6 +183,7 @@ function MonthView({
                                 {fmt((c.total_lost ?? 0) + (c.total_dead ?? 0))}
                               </td>
                             )}
+                            <PrintCell dir={dir} id={c._id} readOnly={c.readOnly} />
                           </tr>
                         ))}
                       </tbody>
@@ -195,7 +199,7 @@ function MonthView({
   );
 }
 
-function SearchResults({ keyword, challans }: { keyword: string; challans: Challan[] }) {
+function SearchResults({ dir, keyword, challans }: { dir: Direction; keyword: string; challans: Challan[] }) {
   if (challans.length === 0) {
     return <EmptyNote>No challans match &ldquo;{keyword}&rdquo;.</EmptyNote>;
   }
@@ -211,6 +215,7 @@ function SearchResults({ keyword, challans }: { keyword: string; challans: Chall
             <th className={th}>Transporter</th>
             <th className={th}>Vehicle</th>
             <th className={`${th} text-right`}>Items</th>
+            <ActionsHeader />
           </tr>
         </thead>
         <tbody className="divide-y divide-line">
@@ -222,11 +227,38 @@ function SearchResults({ keyword, challans }: { keyword: string; challans: Chall
               <td className={`${td} text-muted`}>{c.from_warehouse_name}</td>
               <td className={`${td} text-muted`}>{c.transporter_name}</td>
               <td className={`${td} text-muted`}>{c.vehicle_no}</td>
-              <td className={`${td} text-right tabular-nums`}>{fmt(c.items.length)}</td>
+              <td className={`${td} text-right tabular-nums`}>{fmt(c.items?.length ?? 0)}</td>
+              <PrintCell dir={dir} id={c._id} readOnly={c.readOnly} />
             </tr>
           ))}
         </tbody>
       </table>
     </TableWrap>
+  );
+}
+
+function ActionsHeader() {
+  return (
+    <th className={th}>
+      <span className="sr-only">Print</span>
+    </th>
+  );
+}
+
+/** Opens the 2-page A4 letter + delivery challan in a new tab. */
+function PrintCell({ dir, id, readOnly }: { dir: Direction; id?: string; readOnly?: boolean }) {
+  return (
+    <td className={`${td} text-right`}>
+      {id && !readOnly && (
+        <Link
+          href={challanPrintHref(dir, id)}
+          target="_blank"
+          className="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
+        >
+          <Printer className="size-3.5" aria-hidden />
+          Print
+        </Link>
+      )}
+    </td>
   );
 }

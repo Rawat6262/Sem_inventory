@@ -1,10 +1,11 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Modal } from "@/components/modal";
 import { Alert, Button, Field, Input, Select, Textarea } from "@/components/ui";
-import { createOutgoingChallan, fmt, useChallanMutation, useExhibitionsList, type DealPurpose, type OutgoingItemInput } from "@/lib/challans";
+import { challanPrintHref, createOutgoingChallan, fmt, useChallanMutation, useExhibitionsList, type DealPurpose, type OutgoingItemInput } from "@/lib/challans";
 import { available, useProducts, useWarehouses, warehouseLabel } from "@/lib/stock";
 import { fmtMoney } from "@/lib/transactions";
 import { useTransporters } from "@/lib/transport";
@@ -21,7 +22,8 @@ export function OutgoingChallanDialog({ open, onClose }: Props) {
   );
 }
 
-type ItemRow = { productId: string; quantity: string };
+type ItemRow = { productId: string; quantity: string; hsn: string };
+const EMPTY_ROW: ItemRow = { productId: "", quantity: "", hsn: "" };
 
 function OutgoingChallanForm({ onDone }: { onDone: () => void }) {
   const exhibitions = useExhibitionsList();
@@ -33,9 +35,11 @@ function OutgoingChallanForm({ onDone }: { onDone: () => void }) {
   const [warehouseId, setWarehouseId] = useState("");
   const [transporterId, setTransporterId] = useState("");
   const [vehicleNo, setVehicleNo] = useState("");
-  const [itemRows, setItemRows] = useState<ItemRow[]>([{ productId: "", quantity: "" }]);
+  const [itemRows, setItemRows] = useState<ItemRow[]>([EMPTY_ROW]);
   const [purposeRows, setPurposeRows] = useState<DealPurpose[]>([{ purpose: "transportation", amount: 0 }]);
   const [remarks, setRemarks] = useState("");
+  const [goodsValue, setGoodsValue] = useState("");
+  const router = useRouter();
 
   const save = useChallanMutation("outgoing", createOutgoingChallan);
 
@@ -62,12 +66,13 @@ function OutgoingChallanForm({ onDone }: { onDone: () => void }) {
     });
   const purposeNames = purposeRows.map((r) => r.purpose.trim().toLowerCase());
   const purposesValid = purposeRows.every((r) => r.purpose.trim() && Number(r.amount) > 0) && new Set(purposeNames).size === purposeNames.length;
-  const valid = Boolean(exhibitionId && warehouseId && transporterId && vehicleNo.trim()) && itemsValid && purposesValid;
+  const goodsValueValid = goodsValue === "" || Number(goodsValue) >= 0;
+  const valid = Boolean(exhibitionId && warehouseId && transporterId && vehicleNo.trim()) && itemsValid && purposesValid && goodsValueValid;
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!valid) return;
-    const items: OutgoingItemInput[] = itemRows.map((r) => ({ item_id: r.productId, quantity: Number(r.quantity) }));
+    const items: OutgoingItemInput[] = itemRows.map((r) => ({ item_id: r.productId, quantity: Number(r.quantity), hsn_code: r.hsn.trim() || undefined }));
     save.mutate(
       {
         exhibition_id: exhibitionId,
@@ -77,8 +82,15 @@ function OutgoingChallanForm({ onDone }: { onDone: () => void }) {
         items,
         purposes: purposeRows.map((r) => ({ purpose: r.purpose.trim(), amount: Number(r.amount) })),
         remarks: remarks.trim() || undefined,
+        goods_value: goodsValue === "" ? undefined : Number(goodsValue),
       },
-      { onSuccess: onDone },
+      {
+        // Straight to the printable transport letter + delivery challan.
+        onSuccess: (res) => {
+          onDone();
+          router.push(challanPrintHref("outgoing", res.data._id, true));
+        },
+      },
     );
   }
 
@@ -105,7 +117,7 @@ function OutgoingChallanForm({ onDone }: { onDone: () => void }) {
               value={warehouseId}
               onChange={(e) => {
                 setWarehouseId(e.target.value);
-                setItemRows([{ productId: "", quantity: "" }]);
+                setItemRows([EMPTY_ROW]);
               }}
               disabled={warehouses.isPending}
             >
@@ -159,7 +171,12 @@ function OutgoingChallanForm({ onDone }: { onDone: () => void }) {
               <div key={i} className="flex items-end gap-2">
                 <Field label={i === 0 ? "Product" : ""} className="flex-1">
                   {(id) => (
-                    <Select id={id} required value={row.productId} onChange={(e) => updateItem(i, { productId: e.target.value, quantity: "" })}>
+                    <Select
+                      id={id}
+                      required
+                      value={row.productId}
+                      onChange={(e) => updateItem(i, { productId: e.target.value, quantity: "", hsn: availableProducts.find((p) => p._id === e.target.value)?.hsn_code ?? "" })}
+                    >
                       <option value="">Select product</option>
                       {availableProducts
                         .filter((p) => p._id === row.productId || !chosenIds.has(p._id))
@@ -170,6 +187,9 @@ function OutgoingChallanForm({ onDone }: { onDone: () => void }) {
                         ))}
                     </Select>
                   )}
+                </Field>
+                <Field label={i === 0 ? "HSN code" : ""} className="w-24">
+                  {(id) => <Input id={id} inputMode="numeric" maxLength={10} disabled={!chosen} value={row.hsn} onChange={(e) => updateItem(i, { hsn: e.target.value })} placeholder="—" />}
                 </Field>
                 <Field label={i === 0 ? "Quantity" : ""} className="w-28">
                   {(id) => (
@@ -197,7 +217,7 @@ function OutgoingChallanForm({ onDone }: { onDone: () => void }) {
           })
         )}
         {availableProducts.length > itemRows.length && (
-          <Button type="button" variant="secondary" className="self-start" onClick={() => setItemRows((r) => [...r, { productId: "", quantity: "" }])}>
+          <Button type="button" variant="secondary" className="self-start" onClick={() => setItemRows((r) => [...r, EMPTY_ROW])}>
             <Plus className="size-4" aria-hidden />
             Add another item
           </Button>
@@ -236,6 +256,10 @@ function OutgoingChallanForm({ onDone }: { onDone: () => void }) {
           </div>
         )}
       </div>
+
+      <Field label="Total value of goods (optional)" hint="Printed on the delivery challan, in rupees." className="sm:w-64">
+        {(id) => <Input id={id} type="number" inputMode="numeric" min={0} value={goodsValue} onChange={(e) => setGoodsValue(e.target.value)} placeholder="e.g. 178500" aria-invalid={!goodsValueValid || undefined} />}
+      </Field>
 
       <Field label="Remarks (optional)">{(id) => <Textarea id={id} rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} />}</Field>
 

@@ -38,6 +38,7 @@ export type Product = {
   lost: number;
   dead: number;
   total_no?: number; // what's actually on the shelf right now
+  hsn_code?: string; // printed on delivery challans
   vendor?: Vendor | string | null;
   warehouse?: string | null;
   remark?: string | null;
@@ -234,6 +235,7 @@ export type ProductInput = {
   no_of_item: number;
   warehouse: string;
   vendor?: string;
+  hsn_code?: string;
   remark?: string;
 };
 

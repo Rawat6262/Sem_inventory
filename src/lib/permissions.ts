@@ -11,6 +11,7 @@ import {
   HardHat,
   History,
   Landmark,
+  ShoppingCart,
   Store,
   Tent,
   Truck,
@@ -34,6 +35,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 
 export type ModuleKey =
   | "stock"
+  | "purchase"
   | "exhibitions"
   | "client"
   | "contractor"
@@ -67,6 +69,13 @@ export const MODULES: ModuleDef[] = [
     label: "Stock",
     description: "Warehouses, products, categories and stock transfers",
     icon: Boxes,
+    group: "Operations",
+  },
+  {
+    key: "purchase",
+    label: "Purchases",
+    description: "What was bought, from whom, and receiving it into stock",
+    icon: ShoppingCart,
     group: "Operations",
   },
   {
@@ -237,6 +246,14 @@ export function canOpen(role: string, module: ModuleKey, extra?: readonly string
 /** True when the user can open the module only because an admin granted it. */
 export function isGrantedModule(role: string, module: ModuleKey, extra?: readonly string[]): boolean {
   return isRole(role) && DENIED[role].includes(module) && GRANTABLE_MODULES.includes(module) && Boolean(extra?.includes(module));
+}
+
+/**
+ * Purchases are open to every role (anyone can mark one received into stock),
+ * but only admin and employee users record, edit or delete them.
+ */
+export function canRecordPurchases(role: string): boolean {
+  return role === "admin" || role === "employee";
 }
 
 /** Supervisors only read exhibitions; they can't add, edit or delete them. */
