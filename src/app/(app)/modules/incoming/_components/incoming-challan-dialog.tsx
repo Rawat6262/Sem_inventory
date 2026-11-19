@@ -30,7 +30,19 @@ export function IncomingChallanDialog({ open, onClose }: Props) {
   );
 }
 
+// quantity = returned to the shelf. lost and dead are on top of that.
 type ItemRow = { productId: string; name: string; max: number; quantity: string; lost: string; dead: string };
+
+const count = (v: string) => Number(v || 0);
+const rowTotal = (r: ItemRow) => count(r.quantity) + count(r.lost) + count(r.dead);
+
+function rowProblem(r: ItemRow): string | null {
+  const parts = [count(r.quantity), count(r.lost), count(r.dead)];
+  if (parts.some((n) => !Number.isInteger(n) || n < 0)) return "Use whole numbers, 0 or more.";
+  const total = rowTotal(r);
+  if (total > r.max) return `Returned + lost + dead is ${fmt(total)}, but only ${fmt(r.max)} are pending.`;
+  return null;
+}
 
 function IncomingChallanForm({ onDone }: { onDone: () => void }) {
   const exhibitions = useExhibitionsList();
@@ -67,13 +79,10 @@ function IncomingChallanForm({ onDone }: { onDone: () => void }) {
     setPurposeRows((r) => r.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
   }
 
-  const activeRows = rows.filter((r) => Number(r.quantity) > 0);
-  const rowErrors = activeRows.some((r) => {
-    const q = Number(r.quantity);
-    const lost = Number(r.lost || 0);
-    const dead = Number(r.dead || 0);
-    return q <= 0 || q > r.max || lost + dead > q;
-  });
+  // Returned (back on the shelf), lost and dead are separate counts. Together
+  // they're what this challan accounts for, which can't exceed what's pending.
+  const activeRows = rows.filter((r) => rowTotal(r) > 0);
+  const rowErrors = activeRows.some((r) => rowProblem(r) !== null);
   const purposeNames = purposeRows.map((r) => r.purpose.trim().toLowerCase());
   const purposesValid = purposeRows.every((r) => r.purpose.trim() && Number(r.amount) > 0) && new Set(purposeNames).size === purposeNames.length;
   const valid = Boolean(exhibitionId && warehouseId && transporterId && vehicleNo.trim()) && activeRows.length > 0 && !rowErrors && purposesValid;
@@ -81,9 +90,11 @@ function IncomingChallanForm({ onDone }: { onDone: () => void }) {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!valid) return;
+    // The API's `quantity` is everything accounted for on this challan
+    // (returned + lost + dead); it works out what's back on the shelf itself.
     const items: IncomingItemInput[] = activeRows.map((r) => ({
       item_id: r.productId,
-      quantity: Number(r.quantity),
+      quantity: rowTotal(r),
       lost: Number(r.lost || 0) || undefined,
       dead: Number(r.dead || 0) || undefined,
     }));
@@ -146,8 +157,8 @@ function IncomingChallanForm({ onDone }: { onDone: () => void }) {
         ) : (
           <div className="flex flex-col gap-3">
             {rows.map((row, i) => {
-              const q = Number(row.quantity || 0);
-              const lostDeadTooHigh = Number(row.lost || 0) + Number(row.dead || 0) > q;
+              const total = rowTotal(row);
+              const problem = rowProblem(row);
               return (
                 <div key={row.productId} className="rounded-lg border border-line p-3">
                   <div className="flex items-center justify-between text-sm">
@@ -156,14 +167,20 @@ function IncomingChallanForm({ onDone }: { onDone: () => void }) {
                   </div>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     <Field label="Returned">{(id) => <Input id={id} type="number" inputMode="numeric" min={0} max={row.max} value={row.quantity} onChange={(e) => updateRow(i, { quantity: e.target.value })} />}</Field>
-                    <Field label="Lost">{(id) => <Input id={id} type="number" inputMode="numeric" min={0} disabled={q === 0} value={row.lost} onChange={(e) => updateRow(i, { lost: e.target.value })} />}</Field>
-                    <Field label="Dead">{(id) => <Input id={id} type="number" inputMode="numeric" min={0} disabled={q === 0} value={row.dead} onChange={(e) => updateRow(i, { dead: e.target.value })} />}</Field>
+                    <Field label="Lost">{(id) => <Input id={id} type="number" inputMode="numeric" min={0} max={row.max} value={row.lost} onChange={(e) => updateRow(i, { lost: e.target.value })} />}</Field>
+                    <Field label="Dead">{(id) => <Input id={id} type="number" inputMode="numeric" min={0} max={row.max} value={row.dead} onChange={(e) => updateRow(i, { dead: e.target.value })} />}</Field>
                   </div>
-                  {lostDeadTooHigh && <p className="mt-1 text-xs text-danger">Lost + dead can&apos;t exceed what&apos;s returned.</p>}
+                  {problem ? (
+                    <p className="mt-1 text-xs text-danger">{problem}</p>
+                  ) : total > 0 ? (
+                    <p className="mt-1 text-xs text-muted">
+                      {fmt(total)} of {fmt(row.max)} accounted for{total < row.max ? `, ${fmt(row.max - total)} still pending after this` : ""}.
+                    </p>
+                  ) : null}
                 </div>
               );
             })}
-            <p className="text-xs text-muted">Leave &ldquo;Returned&rdquo; at 0 to skip an item.</p>
+            <p className="text-xs text-muted">Returned + lost + dead can&apos;t be more than what&apos;s pending. Leave all three empty to skip an item.</p>
           </div>
         )}
       </div>
