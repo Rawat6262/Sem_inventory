@@ -1,7 +1,8 @@
 "use client";
 
 import { TriangleAlert } from "lucide-react";
-import { fmt, useStockOverview } from "@/lib/reports";
+import Link from "next/link";
+import { fmt, fmtDate, fmtMoney, useStockOverview } from "@/lib/reports";
 import { EmptyNote, QueryState, Section, StatTile, TableWrap, td, th } from "../_components/reports-ui";
 
 export function StockOverviewView() {
@@ -16,8 +17,8 @@ export function StockOverviewView() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               <StatTile label="Warehouses" value={d.warehouses.length} />
               <StatTile label="Products" value={fmt(d.totals.product_count)} />
-              <StatTile label="Total stock" value={fmt(d.totals.total_no)} />
-              <StatTile label="On the shelf" value={fmt(d.totals.no_of_item)} tone="success" />
+              <StatTile label="Total owned" value={fmt(d.totals.no_of_item)} />
+              <StatTile label="On the shelf" value={fmt(d.totals.total_no)} tone="success" />
               <StatTile label="Out for exhibition" value={fmt(d.totals.out_for_exhibition)} tone="accent" />
               <StatTile label="Lost / dead" value={`${fmt(d.totals.lost)} / ${fmt(d.totals.dead)}`} tone="danger" />
             </div>
@@ -47,8 +48,8 @@ export function StockOverviewView() {
                             {w.warehouse_name} (#{w.warehouse_no})
                           </td>
                           <td className={`${td} text-right`}>{w.product_count}</td>
-                          <td className={`${td} text-right`}>{fmt(w.total_no)}</td>
-                          <td className={`${td} text-right text-success`}>{fmt(w.no_of_item)}</td>
+                          <td className={`${td} text-right`}>{fmt(w.no_of_item)}</td>
+                          <td className={`${td} text-right text-success`}>{fmt(w.total_no)}</td>
                           <td className={`${td} text-right text-accent`}>{fmt(w.out_for_exhibition)}</td>
                           <td className={`${td} text-right text-muted`}>{fmt(w.repair_item)}</td>
                           <td className={`${td} text-right text-danger`}>{fmt(w.lost)}</td>
@@ -60,6 +61,55 @@ export function StockOverviewView() {
                 </TableWrap>
               )}
             </Section>
+
+            {d.purchases && (
+              <Section
+                title="Purchases waiting to be received"
+                description={`Bought but not in stock yet. ${fmt(d.purchases.received_last_30_days.count)} purchase(s) (${fmt(d.purchases.received_last_30_days.units)} units, ${fmtMoney(d.purchases.received_last_30_days.amount)}) were received in the last 30 days.`}
+              >
+                {d.purchases.pending.length === 0 ? (
+                  <EmptyNote>Nothing is waiting to be received.</EmptyNote>
+                ) : (
+                  <>
+                    <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      <StatTile label="Waiting" value={fmt(d.purchases.pending_count)} tone="warn" />
+                      <StatTile label="Units on the way" value={fmt(d.purchases.pending_units)} />
+                      <StatTile label="Value" value={fmtMoney(d.purchases.pending_amount)} />
+                    </div>
+                    <TableWrap>
+                      <table className="w-full text-sm">
+                        <thead className="border-b border-line bg-surface-2/50">
+                          <tr>
+                            <th className={th}>Purchase</th>
+                            <th className={th}>Date</th>
+                            <th className={th}>Vendor</th>
+                            <th className={th}>Into warehouse</th>
+                            <th className={`${th} text-right`}>Units</th>
+                            <th className={`${th} text-right`}>Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                          {d.purchases.pending.map((p) => (
+                            <tr key={p.id}>
+                              <td className={td}>
+                                <Link href={`/modules/purchase/${p.id}`} className="font-medium hover:text-accent hover:underline">
+                                  {p.purchase_number}
+                                </Link>
+                              </td>
+                              <td className={`${td} text-muted`}>{fmtDate(p.date)}</td>
+                              <td className={td}>{p.vendor_name}</td>
+                              <td className={`${td} text-muted`}>{p.warehouse_name}</td>
+                              <td className={`${td} text-right tabular-nums`}>{fmt(p.units)}</td>
+                              <td className={`${td} text-right tabular-nums`}>{fmtMoney(p.total_amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </TableWrap>
+                  </>
+                )}
+              </Section>
+            )}
 
             <Section
               title="Low stock"
@@ -88,8 +138,8 @@ export function StockOverviewView() {
                             </span>
                           </td>
                           <td className={`${td} text-muted`}>{p.warehouse_name}</td>
-                          <td className={`${td} text-right font-medium text-warn`}>{fmt(p.no_of_item)}</td>
-                          <td className={`${td} text-right text-muted`}>{fmt(p.total_no)}</td>
+                          <td className={`${td} text-right font-medium text-warn`}>{fmt(p.total_no)}</td>
+                          <td className={`${td} text-right text-muted`}>{fmt(p.no_of_item)}</td>
                         </tr>
                       ))}
                     </tbody>

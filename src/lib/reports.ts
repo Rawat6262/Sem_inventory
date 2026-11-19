@@ -50,6 +50,12 @@ export type MonthRow = {
   incoming_lost: number;
   incoming_dead: number;
   profit_actual: number;
+  outgoing_goods_value: number; // "Total value of goods" written on the challans
+  purchase_count: number; // stock purchases dated this month
+  purchase_amount: number;
+  purchase_pending: number; // of those, not received into stock yet
+  rejected_leads: number;
+  new_clients: number;
 };
 
 export function useProjectTimeline(year: number | null) {
@@ -83,13 +89,43 @@ export type MonthDetail = {
     };
     profit: { actual: number };
     logistics: {
-      outgoing: { totals: { total_challans: number; total_quantity: number }; challans: unknown[] };
-      incoming: { totals: { total_challans: number; total_quantity: number; total_received: number; total_lost: number; total_dead: number }; challans: unknown[] };
+      outgoing: { totals: { total_challans: number; total_quantity: number; goods_value: number }; challans: unknown[] };
+      incoming: { totals: { total_challans: number; total_quantity: number; total_received: number; total_lost: number; total_dead: number; goods_value: number }; challans: unknown[] };
     };
     new_clients: { count: number; clients: { id: string; name: string; company: string | null; phone: string }[] };
+    purchases: {
+      totals: { count: number; amount: number; received_count: number; received_amount: number; pending_count: number; pending_amount: number };
+      received_into_stock: { count: number; units: number; amount: number };
+      top_vendor: { name: string; amount: number } | null;
+      purchases: PurchaseReportRow[];
+    };
+    rejected_leads: { count: number; lost_deal_value: number; leads: RejectedLeadRow[] };
     highlights: string[];
   };
   notes: string[];
+};
+
+export type PurchaseReportRow = {
+  id: string;
+  purchase_number: string;
+  date: string;
+  vendor_name: string;
+  purchased_by: string;
+  warehouse_name: string;
+  item_count: number;
+  units: number;
+  total_amount: number;
+  status: "pending" | "received";
+};
+
+export type RejectedLeadRow = {
+  id: string;
+  company: string | null;
+  name: string;
+  reason: string;
+  rejected_by: string | null;
+  rejected_at: string;
+  lost_deal_value: number;
 };
 
 export function useProjectMonthDetail(year: number | null, month: number | null) {
@@ -170,6 +206,13 @@ export type StockOverview = {
   warehouses: WarehouseStockRow[];
   low_stock: LowStockRow[];
   low_stock_threshold: number;
+  purchases: {
+    pending_count: number;
+    pending_amount: number;
+    pending_units: number;
+    pending: { id: string; purchase_number: string; date: string; vendor_name: string; warehouse_name: string; units: number; total_amount: number }[];
+    received_last_30_days: { count: number; units: number; amount: number };
+  };
 };
 
 export function useStockOverview() {
@@ -190,6 +233,14 @@ export type ClientSummaryRow = {
   stalls_count: number;
   total_deal_amount: number;
   total_paid: number;
+  added_by: string | null;
+  created_at: string;
+  status: "lead" | "final" | "fully_paid" | "rejected";
+  rejected: boolean;
+  reject_reason: string;
+  rejected_by: string | null;
+  rejected_at: string | null;
+  lost_deal_value: number; // what a rejected lead's deal was worth
 };
 
 export function useClientsSummary() {

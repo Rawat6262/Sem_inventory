@@ -19,6 +19,9 @@
   --success-soft: #e6f3e6;
   --warn: #8a5a00;
   --warn-soft: #fbf0d9;
+  /* Report chart series (validated for colour-blind separation and contrast). */
+  --chart-in: #00806a;
+  --chart-out: #eb6834;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -38,6 +41,8 @@
     --success-soft: #1d2f20;
     --warn: #e8b85c;
     --warn-soft: #33290f;
+    --chart-in: #3aa887;
+    --chart-out: #d95926;
   }
 }
 
@@ -57,6 +62,8 @@
   --color-success-soft: var(--success-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
+  --color-chart-in: var(--chart-in);
+  --color-chart-out: var(--chart-out);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

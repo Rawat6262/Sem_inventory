@@ -8,7 +8,7 @@ import { ModuleShell, type ModuleTab } from "@/components/data-ui";
 export * from "@/components/data-ui";
 
 const TABS: ModuleTab[] = [
-  { href: "/modules/reports", label: "Money", match: (p) => p === "/modules/reports" },
+  { href: "/modules/reports", label: "Month & year", match: (p) => p === "/modules/reports" },
   { href: "/modules/reports/exhibitions", label: "Exhibitions", match: (p) => p.startsWith("/modules/reports/exhibitions") },
   { href: "/modules/reports/stock", label: "Stock", match: (p) => p.startsWith("/modules/reports/stock") },
   { href: "/modules/reports/clients", label: "Clients", match: (p) => p.startsWith("/modules/reports/clients") },
