@@ -23,6 +23,11 @@ export type ClientStall = {
   received_payment: number;
   total_paid: number;
   remaining_payment: number;
+  // Set on every stall of a rejected client: kept, but left out of every total.
+  rejected?: boolean;
+  reject_reason?: string;
+  rejected_by?: { _id: string; full_name?: string; role?: string } | string | null;
+  rejected_at?: string | null;
 };
 
 export type Design = {
@@ -55,6 +60,11 @@ export type Client = {
   exhibition: ClientExhibitionEntry[];
   createdBy?: { _id: string; full_name?: string } | string | null;
   createdAt?: string;
+  // A lead client that someone rejected, with why. Left out of every total.
+  rejected?: boolean;
+  reject_reason?: string;
+  rejected_by?: { _id: string; full_name?: string; role?: string } | string | null;
+  rejected_at?: string | null;
 };
 
 /** Another user's client, as the directory shows it: names only. */
@@ -74,7 +84,7 @@ export function clientTotals(c: Client) {
       deal: acc.deal + (e.total_deal_amount || 0),
       paid: acc.paid + (e.total_paid || 0),
       remaining: acc.remaining + (e.total_remaining || 0),
-      stalls: acc.stalls + e.stalls.length,
+      stalls: acc.stalls + e.stalls.filter((s) => !s.rejected).length, // rejected leads aren't deals
     }),
     { deal: 0, paid: 0, remaining: 0, stalls: 0 },
   );
@@ -85,21 +95,24 @@ export function clientTotals(c: Client) {
  * - lead: details and/or deal amount only, nothing paid yet
  * - final: an advance or payment came in, but some amount is still due
  * - fully_paid: nothing remaining
+ * - rejected: a lead client someone rejected (with a reason); not counted anywhere
  */
-export type DealStatus = "lead" | "final" | "fully_paid";
+export type DealStatus = "lead" | "final" | "fully_paid" | "rejected";
 
-export const DEAL_STATUSES: DealStatus[] = ["lead", "final", "fully_paid"];
+export const DEAL_STATUSES: DealStatus[] = ["lead", "final", "fully_paid", "rejected"];
 
 export const DEAL_STATUS_LABELS: Record<DealStatus, string> = {
   lead: "Lead",
   final: "Final",
   fully_paid: "Fully paid",
+  rejected: "Rejected",
 };
 
 export const DEAL_STATUS_HINTS: Record<DealStatus, string> = {
   lead: "Deal agreed, nothing paid yet",
   final: "Payment received, amount still due",
   fully_paid: "Nothing remaining",
+  rejected: "Lead rejected; left out of the totals",
 };
 
 function dealStatusOf(deal: number, paid: number, remaining: number): DealStatus {
@@ -109,11 +122,13 @@ function dealStatusOf(deal: number, paid: number, remaining: number): DealStatus
 }
 
 export function stallStatus(s: ClientStall): DealStatus {
+  if (s.rejected) return "rejected";
   return dealStatusOf(s.deal_amount || 0, s.total_paid || 0, s.remaining_payment || 0);
 }
 
 /** A client's status across all their stalls (no stalls yet counts as a lead). */
 export function clientStatus(c: Client): DealStatus {
+  if (c.rejected) return "rejected";
   const t = clientTotals(c);
   return dealStatusOf(t.deal, t.paid, t.remaining);
 }
@@ -235,6 +250,18 @@ export type UpdatePaymentInput = {
 
 export const updateClientPayment = ({ clientId, exhibitionId, stallId, ...body }: UpdatePaymentInput) =>
   api(`${clientId}/exhibitions/${exhibitionId}/stalls/${stallId}/payment`, { method: "PATCH", body });
+
+/** Reject a lead client (nothing paid yet) with a reason. */
+export const rejectClient = ({ clientId, reason }: { clientId: string; reason: string }) =>
+  api(`client/${clientId}/reject`, { method: "PATCH", body: { reason } });
+
+/** Put a rejected client back as a lead; it counts in the totals again. */
+export const reopenClient = (clientId: string) => api(`client/${clientId}/reopen`, { method: "PATCH" });
+
+/** Who rejected a client, when the API populated it. */
+export function rejectedByName(c: Client): string | null {
+  return c.rejected_by && typeof c.rejected_by === "object" ? (c.rejected_by.full_name ?? null) : null;
+}
 
 // ─── Designs ────────────────────────────────────────────────────────────────
 

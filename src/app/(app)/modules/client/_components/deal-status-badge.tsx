@@ -5,6 +5,7 @@ const TONE: Record<DealStatus, string> = {
   lead: "bg-surface-2 text-muted",
   final: "bg-warn-soft text-warn",
   fully_paid: "bg-success-soft text-success",
+  rejected: "bg-danger-soft text-danger",
 };
 
 export function DealStatusBadge({ status, className }: { status: DealStatus; className?: string }) {

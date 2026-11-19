@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Handshake, Phone, Plus, Trash2 } from "lucide-react";
+import { Ban, ChevronRight, Handshake, Phone, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
@@ -17,6 +17,7 @@ import {
   deleteClient,
   fmt,
   fmtMoney,
+  rejectedByName,
   useClientDirectory,
   useClients,
   useClientsMutation,
@@ -25,6 +26,7 @@ import {
 } from "@/lib/clients";
 import { ClientDialog } from "./_components/client-dialog";
 import { DealStatusBadge } from "./_components/deal-status-badge";
+import { RejectClientDialog } from "./_components/reject-client-dialog";
 
 export function ClientsView() {
   const clients = useClients();
@@ -34,6 +36,7 @@ export function ClientsView() {
   const [status, setStatus] = useState<DealStatus | "">("");
   const [editing, setEditing] = useState<Client | null | "new">(null);
   const [deleting, setDeleting] = useState<Client | null>(null);
+  const [rejecting, setRejecting] = useState<Client | null>(null);
   const remove = useClientsMutation((id: string) => deleteClient(id));
 
   const overall = useMemo(() => {
@@ -48,7 +51,7 @@ export function ClientsView() {
   }, [clients.data]);
 
   const statusCounts = useMemo(() => {
-    const counts: Record<DealStatus, number> = { lead: 0, final: 0, fully_paid: 0 };
+    const counts: Record<DealStatus, number> = { lead: 0, final: 0, fully_paid: 0, rejected: 0 };
     for (const c of clients.data ?? []) counts[clientStatus(c)] += 1;
     return counts;
   }, [clients.data]);
@@ -121,6 +124,7 @@ export function ClientsView() {
                 <tbody className="divide-y divide-line">
                   {list.map((c) => {
                     const t = clientTotals(c);
+                    const rowStatus = clientStatus(c);
                     return (
                       <tr key={c._id} className="hover:bg-surface-2/40">
                         <td className={td}>
@@ -136,7 +140,12 @@ export function ClientsView() {
                           </span>
                         </td>
                         <td className={td}>
-                          <DealStatusBadge status={clientStatus(c)} />
+                          <DealStatusBadge status={rowStatus} />
+                          {c.rejected && c.reject_reason && (
+                            <div className="mt-1 max-w-48 truncate text-xs text-muted" title={`${c.reject_reason}${rejectedByName(c) ? ` (rejected by ${rejectedByName(c)})` : ""}`}>
+                              {c.reject_reason}
+                            </div>
+                          )}
                         </td>
                         {!ownOnly && <td className={`${td} text-muted`}>{addedByName(c) ?? "—"}</td>}
                         <td className={`${td} text-right tabular-nums`}>{fmt(c.exhibition.length)}</td>
@@ -149,6 +158,12 @@ export function ClientsView() {
                         </td>
                         <td className={`${td} text-right`}>
                           <div className="flex justify-end gap-1">
+                            {rowStatus === "lead" && (
+                              <Button variant="ghost" className="h-8 px-2.5 text-danger hover:bg-danger-soft" onClick={() => setRejecting(c)}>
+                                <Ban className="size-3.5" aria-hidden />
+                                Reject
+                              </Button>
+                            )}
                             <Link
                               href={`/modules/client/${c._id}`}
                               className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
@@ -172,6 +187,8 @@ export function ClientsView() {
           )}
 
           {ownOnly && <ClientDirectory />}
+
+          {rejecting && <RejectClientDialog client={rejecting} onClose={() => setRejecting(null)} />}
 
           <ClientDialog open={editing !== null} client={editing === "new" ? null : editing} onClose={() => setEditing(null)} />
 

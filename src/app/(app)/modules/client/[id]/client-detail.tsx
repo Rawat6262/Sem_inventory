@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, ChartColumn, Pencil, Phone, Plus, SearchX, Star, Trash2, Wallet } from "lucide-react";
+import { CalendarDays, ChartColumn, Pencil, Phone, Plus, RotateCcw, SearchX, Star, Trash2, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -18,8 +18,11 @@ import {
   exhibitionRefId,
   exhibitionRefName,
   fmt,
+  fmtDate,
   fmtMoney,
   makeDesignFinal,
+  rejectedByName,
+  reopenClient,
   removeClientStall,
   removeExhibitionFromClient,
   clientStatus,
@@ -59,6 +62,7 @@ export function ClientDetail() {
   const removeStallMut = useClientsMutation(removeClientStall);
   const removeDesignMut = useClientsMutation((did: string) => deleteDesign(did));
   const makeFinalMut = useClientsMutation((did: string) => makeDesignFinal(did));
+  const reopenMut = useClientsMutation((cid: string) => reopenClient(cid));
 
   if (client.error instanceof ApiError && [400, 404].includes(client.error.status)) {
     return (
@@ -122,12 +126,35 @@ export function ClientDetail() {
                     </Button>
                   </Link>
                 )}
-                <Button onClick={() => setAddingExhibition(true)}>
-                  <Plus className="size-4" aria-hidden />
-                  Book for exhibition
-                </Button>
+                {!c.rejected && (
+                  <Button onClick={() => setAddingExhibition(true)}>
+                    <Plus className="size-4" aria-hidden />
+                    Book for exhibition
+                  </Button>
+                )}
               </div>
             </div>
+
+            {c.rejected && (
+              <div className="mt-4 flex flex-col gap-3 rounded-xl border border-danger/30 bg-danger-soft/40 p-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="text-sm">
+                  <p className="font-medium text-danger">
+                    Lead rejected
+                    <span className="font-normal text-muted">
+                      {rejectedByName(c) ? ` by ${rejectedByName(c)}` : ""}
+                      {c.rejected_at ? ` on ${fmtDate(c.rejected_at)}` : ""}
+                    </span>
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-ink">{c.reject_reason}</p>
+                  <p className="mt-1 text-xs text-muted">Left out of the deal, paid and remaining totals. Reopen it to book stalls or take payments again.</p>
+                </div>
+                <Button variant="secondary" className="shrink-0" loading={reopenMut.isPending} onClick={() => reopenMut.mutate(c._id)}>
+                  <RotateCcw className="size-4" aria-hidden />
+                  Reopen
+                </Button>
+              </div>
+            )}
+            {reopenMut.error && <p className="mt-2 text-sm text-danger">{reopenMut.error.message}</p>}
 
             <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-5">
               <StatTile label="Exhibitions" value={fmt(c.exhibition.length)} />
@@ -139,7 +166,7 @@ export function ClientDetail() {
 
             {c.exhibition.length === 0 ? (
               <div className="mt-8">
-                <EmptyState icon={<CalendarDays className="size-6" />} title="Not booked for any exhibition yet" action={<Button onClick={() => setAddingExhibition(true)}>Book for an exhibition</Button>}>
+                <EmptyState icon={<CalendarDays className="size-6" />} title="Not booked for any exhibition yet" action={c.rejected ? undefined : <Button onClick={() => setAddingExhibition(true)}>Book for an exhibition</Button>}>
                   Book this client for an exhibition, then add their stalls.
                 </EmptyState>
               </div>
@@ -157,7 +184,7 @@ export function ClientDetail() {
                     description={`Deal ${fmtMoney(entry.total_deal_amount)} · Paid ${fmtMoney(entry.total_paid)} · Remaining ${fmtMoney(entry.total_remaining)}`}
                     action={
                       <div className="flex gap-2">
-                        <Button variant="secondary" className="h-8 px-2.5" onClick={() => setStallDialog({ exhibitionId, stall: null })}>
+                        <Button variant="secondary" className="h-8 px-2.5" disabled={Boolean(c.rejected)} onClick={() => setStallDialog({ exhibitionId, stall: null })}>
                           <Plus className="size-3.5" aria-hidden />
                           Add stall
                         </Button>
@@ -195,31 +222,33 @@ export function ClientDetail() {
                             {entry.stalls.map((stall) => {
                               const status = stallStatus(stall);
                               return (
-                                <tr key={stall._id}>
-                                  <td className={td}>
+                                <tr key={stall._id} className={stall.rejected ? "bg-danger-soft/30" : undefined}>
+                                  <td className={`${td} whitespace-normal`}>
                                     <div className="font-medium">{stall.stall_name || stall.stall_no || "Stall"}</div>
                                     {stall.stall_size && <div className="text-xs text-muted">{stall.stall_size}</div>}
                                   </td>
                                   <td className={td}>
                                     <DealStatusBadge status={status} />
                                   </td>
-                                  <td className={`${td} text-right tabular-nums`}>{fmtMoney(stall.deal_amount)}</td>
+                                  <td className={`${td} text-right tabular-nums ${stall.rejected ? "text-muted line-through" : ""}`}>{fmtMoney(stall.deal_amount)}</td>
                                   <td className={`${td} text-right`}>
-                                    <Count n={stall.total_paid} tone="success" money />
+                                    {stall.rejected ? <span className="text-muted">—</span> : <Count n={stall.total_paid} tone="success" money />}
                                   </td>
                                   <td className={`${td} text-right`}>
-                                    <Count n={stall.remaining_payment} tone="warn" money />
+                                    {stall.rejected ? <span className="text-muted">—</span> : <Count n={stall.remaining_payment} tone="warn" money />}
                                   </td>
                                   <td className={`${td} text-right`}>
                                     <div className="flex justify-end gap-1">
-                                      <Button
-                                        variant="ghost"
-                                        className="h-8 px-2 text-accent hover:bg-accent-soft"
-                                        onClick={() => setPayingStall({ exhibitionId, stall })}
-                                      >
-                                        <Wallet className="size-3.5" aria-hidden />
-                                        Payment
-                                      </Button>
+                                      {!stall.rejected && (
+                                        <Button
+                                          variant="ghost"
+                                          className="h-8 px-2 text-accent hover:bg-accent-soft"
+                                          onClick={() => setPayingStall({ exhibitionId, stall })}
+                                        >
+                                          <Wallet className="size-3.5" aria-hidden />
+                                          Payment
+                                        </Button>
+                                      )}
                                       <Button variant="ghost" className="h-8 px-2" onClick={() => setStallDialog({ exhibitionId, stall })} aria-label="Edit stall">
                                         <Pencil className="size-3.5" aria-hidden />
                                       </Button>
@@ -393,6 +422,7 @@ export function ClientDetail() {
             {payingStall && (
               <StallPaymentDialog open onClose={() => setPayingStall(null)} clientId={c._id} exhibitionId={payingStall.exhibitionId} stall={payingStall.stall} />
             )}
+
 
             {designDialog && (
               <DesignDialog
