@@ -122,9 +122,11 @@ export const employeeKeys = {
 
 // ─── Extra module access (admin only) ──────────────────────────────────────
 
-/** The login behind an employee record and the modules granted on top of its role. */
+/** The login behind an employee record, its role's modules and the changes an admin made. */
 export type EmployeeAccess = {
   user: { _id: string; full_name: string; gmail: string; role: string } | null;
+  roleModules?: string[]; // what the role opens by default (removable; none for admins)
+  removedModules?: string[]; // role modules taken away from this user
   extraModules: string[];
   grantable: string[]; // modules this user's role can't open on its own
 };
@@ -137,8 +139,9 @@ export function useEmployeeAccess(employeeId: string, enabled: boolean) {
   });
 }
 
-export const saveEmployeeAccess = ({ employeeId, modules }: { employeeId: string; modules: string[] }) =>
-  api<{ data: EmployeeAccess }>(`employee/${employeeId}/access`, { method: "PUT", body: { modules } });
+/** `modules` = extra modules granted; `removed` = role modules taken away. */
+export const saveEmployeeAccess = ({ employeeId, modules, removed }: { employeeId: string; modules: string[]; removed: string[] }) =>
+  api<{ data: EmployeeAccess }>(`employee/${employeeId}/access`, { method: "PUT", body: { modules, removed } });
 
 export function useEmployees() {
   return useQuery({

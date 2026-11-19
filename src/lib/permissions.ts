@@ -236,11 +236,22 @@ export const GRANTABLE_MODULES: ModuleKey[] = [
   "transaction", "contractor", "manpower", "vendor", "transport", "outgoing", "incoming", "client", "quotation",
 ];
 
-/** `extra` is the user's admin-granted modules (Me.extraModules). */
-export function canOpen(role: string, module: ModuleKey, extra?: readonly string[]): boolean {
+/**
+ * `extra` is the user's admin-granted modules (Me.extraModules); `removed` is
+ * the role modules an admin took away from them (Me.removedModules, never for
+ * admins). Same rule as the backend's userCanOpen.
+ */
+export function canOpen(role: string, module: ModuleKey, extra?: readonly string[], removed?: readonly string[]): boolean {
   // Unknown roles (for example an old "transporter" account) see nothing.
   if (!isRole(role)) return false;
-  return !DENIED[role].includes(module) || isGrantedModule(role, module, extra);
+  if (!DENIED[role].includes(module)) return role === "admin" || !removed?.includes(module);
+  return isGrantedModule(role, module, extra);
+}
+
+/** The modules a role opens by default (what an admin can take away; none for admins). */
+export function roleModules(role: string): ModuleKey[] {
+  if (!isRole(role) || role === "admin") return [];
+  return MODULES.filter((m) => !DENIED[role].includes(m.key)).map((m) => m.key);
 }
 
 /** True when the user can open the module only because an admin granted it. */
@@ -292,8 +303,8 @@ export function canEditStock(
 
 export const canEditOwnRecord = canEditStock;
 
-export function modulesFor(role: string, extra?: readonly string[]): ModuleDef[] {
-  return MODULES.filter((m) => canOpen(role, m.key, extra));
+export function modulesFor(role: string, extra?: readonly string[], removed?: readonly string[]): ModuleDef[] {
+  return MODULES.filter((m) => canOpen(role, m.key, extra, removed));
 }
 
 export function findModule(key: string): ModuleDef | undefined {

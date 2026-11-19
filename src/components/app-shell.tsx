@@ -60,7 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     );
   }
 
-  const groups = groupModules(modulesFor(me.role, me.extraModules));
+  const groups = groupModules(modulesFor(me.role, me.extraModules, me.removedModules));
   const roleLabel = isRole(me.role) ? ROLE_LABELS[me.role] : me.role;
 
   const nav = (

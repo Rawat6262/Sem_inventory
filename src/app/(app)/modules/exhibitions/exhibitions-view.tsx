@@ -34,7 +34,7 @@ export function ExhibitionsView() {
   const remove = useExhibitionsMutation((id: string) => deleteExhibition(id));
   const me = useMe().data;
   const manage = Boolean(me && canManageExhibitions(me.role));
-  const showClients = Boolean(me && canOpen(me.role, "client", me.extraModules));
+  const showClients = Boolean(me && canOpen(me.role, "client", me.extraModules, me.removedModules));
   const [now] = useState(() => Date.now());
 
   const counts = useMemo(() => {

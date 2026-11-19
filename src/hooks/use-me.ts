@@ -10,6 +10,7 @@ export type Me = {
   role: string;
   mobile_number?: number | string;
   extraModules?: string[]; // modules an admin granted on top of the role
+  removedModules?: string[]; // role modules an admin took away
 };
 
 export const ME_KEY = ["me"] as const;

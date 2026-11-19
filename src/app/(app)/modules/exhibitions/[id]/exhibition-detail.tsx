@@ -48,7 +48,7 @@ export function ExhibitionDetail() {
   const meQuery = useMe();
   const me = meQuery.data;
   // Roles without the Clients module (e.g. supervisor) see the exhibition only.
-  const showClients = Boolean(me && canOpen(me.role, "client", me.extraModules));
+  const showClients = Boolean(me && canOpen(me.role, "client", me.extraModules, me.removedModules));
   const manage = Boolean(me && canManageExhibitions(me.role));
   const ownClientsOnly = Boolean(
     me && (ownsRecordsOnly(me.role) || isGrantedModule(me.role, "client", me.extraModules)),

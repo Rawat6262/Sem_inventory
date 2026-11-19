@@ -14,7 +14,7 @@ export function Dashboard() {
 
   const missing = profile.data ? missingProfileFields(profile.data) : [];
 
-  const groups = groupModules(modulesFor(me.role, me.extraModules));
+  const groups = groupModules(modulesFor(me.role, me.extraModules, me.removedModules));
   const firstName = (me.full_name || "").trim().split(/\s+/)[0];
 
   return (

@@ -55,7 +55,10 @@ export type SessionUser = {
   role: string;
   mobile_number?: number | string;
   extraModules: string[];
+  removedModules: string[];
 };
+
+const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((m): m is string => typeof m === "string") : []);
 
 export function pickUser(raw: unknown): SessionUser | null {
   if (!raw || typeof raw !== "object") return null;
@@ -67,7 +70,8 @@ export function pickUser(raw: unknown): SessionUser | null {
     gmail: String(u.gmail ?? ""),
     role: u.role.toLowerCase(),
     mobile_number: (u.mobile_number as number | string | undefined) ?? undefined,
-    extraModules: Array.isArray(u.extraModules) ? u.extraModules.filter((m): m is string => typeof m === "string") : [],
+    extraModules: strings(u.extraModules),
+    removedModules: strings(u.removedModules),
   };
 }
 
