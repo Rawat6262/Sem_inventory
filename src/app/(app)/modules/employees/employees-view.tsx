@@ -50,7 +50,7 @@ export function EmployeesView() {
 
           {employees.data?.length === 0 ? (
             <EmptyState icon={<Contact className="size-6" />} title="No employees yet" action={<Button onClick={() => setEditing("new")}>Add the first employee</Button>}>
-              Only active employees are listed here.
+              Staff who sign up are added here automatically.
             </EmptyState>
           ) : list.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">No employees match these filters.</p>
@@ -130,7 +130,8 @@ export function EmployeesView() {
             }}
             onConfirm={() => deleting && remove.mutate(deleting._id, { onSuccess: () => setDeleting(null) })}
           >
-            This also deletes their leave, salary and sales report history. This can&apos;t be undone.
+            This also deletes their leave, unpaid salary and sales report history. Their login keeps working: to stop it, set their status to terminated instead.
+            This can&apos;t be undone.
           </ConfirmDialog>
         </>
       )}

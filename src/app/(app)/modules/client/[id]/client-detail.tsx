@@ -377,7 +377,9 @@ export function ClientDetail() {
                 )
               }
             >
-              {removingExhibition && removingExhibition.stalls.length > 0 ? (
+              {removingExhibition && removingExhibition.stalls.some((s) => s.total_paid > 0) ? (
+                <>Payments are recorded here, so this booking can&apos;t be removed. If that&apos;s a mistake, set them to 0 first.</>
+              ) : removingExhibition && removingExhibition.stalls.length > 0 ? (
                 <>
                   This removes all <strong className="text-ink">{fmt(removingExhibition.stalls.length)} stalls</strong> here, including{" "}
                   {fmtMoney(removingExhibition.total_remaining)} still remaining. This can&apos;t be undone.
@@ -411,8 +413,8 @@ export function ClientDetail() {
             >
               {removingStall && removingStall.stall.total_paid > 0 ? (
                 <>
-                  {fmtMoney(removingStall.stall.total_paid)} is already recorded as paid on this stall. Removing it won&apos;t undo that. This
-                  can&apos;t be undone.
+                  {fmtMoney(removingStall.stall.total_paid)} is recorded as paid on this stall, so it can&apos;t be removed. If that&apos;s a mistake, set its
+                  payments to 0 first.
                 </>
               ) : (
                 <>This can&apos;t be undone.</>

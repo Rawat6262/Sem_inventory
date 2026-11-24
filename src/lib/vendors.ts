@@ -114,15 +114,6 @@ export const deleteVendor = (id: string) => api(`deletevendor/${id}`, { method: 
 
 export type VendorPaymentInput = { exhibition: string; vendor: string; purposes: DealPurpose[]; remark: string };
 
-// Creating a transaction only records what's invoiced — paid_amount stays 0
-// until a separate payment is applied. The vendor summary (unlike labour's
-// stalls, supervisor's or transporter's) reads paid_amount directly, so a
-// "record payment" button has to do both steps to actually show as paid.
-export async function recordVendorPayment(body: VendorPaymentInput) {
-  const total = body.purposes.reduce((s, p) => s + p.amount, 0);
-  const created = await api<{ data: { _id: string } }>("createtransaction", {
-    method: "POST",
-    body: { category: "vendor", payment_mode: "cash", ...body },
-  });
-  return api(`updatetransactionpayment/${created.data._id}`, { method: "PUT", body: { amount: total, payment_mode: "cash" } });
-}
+// A transaction is money already paid, so one call records the payment.
+export const recordVendorPayment = (body: VendorPaymentInput) =>
+  api("createtransaction", { method: "POST", body: { category: "vendor", payment_mode: "cash", ...body } });

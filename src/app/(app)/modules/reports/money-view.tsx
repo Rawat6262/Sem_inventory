@@ -361,7 +361,7 @@ function MonthReport({ year, month, cur, prev, prevLabel }: { year: number; mont
         else {
           lines.push(`In ${label} you collected ${fmtMoney(cur.moneyIn)} from clients and paid out ${fmtMoney(cur.moneyOut)}, leaving a profit of ${fmtMoney(cur.profit)}.`);
           if (prev.moneyIn || prev.moneyOut) lines.push(`That is ${moreLess(cur.moneyIn - prev.moneyIn, "money in", prevLabel)}, and ${moreLess(cur.profit - prev.profit, "profit", prevLabel)}.`);
-          if (payments[0]) lines.push(`Biggest payment received: ${fmtMoney(payments[0].amount)} from ${payments[0].company_name || payments[0].client_name} for ${payments[0].exhibition_name}.`);
+          if (payments[0]?.amount > 0) lines.push(`Biggest payment received: ${fmtMoney(payments[0].amount)} from ${payments[0].company_name || payments[0].client_name} for ${payments[0].exhibition_name}.`);
           if (payees[0]) lines.push(`Biggest payment made: ${fmtMoney(payees[0].paid)} to ${payees[0].name} (${payees[0].type.toLowerCase()}).`);
           if (purchases?.totals.count) lines.push(`${fmtMoney(purchases.totals.amount)} was spent on ${fmt(purchases.totals.count)} stock purchase(s)${purchases.top_vendor ? `, most from ${purchases.top_vendor.name}` : ""}${purchases.totals.pending_count ? `; ${fmt(purchases.totals.pending_count)} still waiting to be received` : ""}.`);
           lines.push(`${fmt(d.new_clients.count)} new client(s) were added${rejected?.count ? `; ${fmt(rejected.count)} lead(s) were rejected, worth ${fmtMoney(rejected.lost_deal_value)} in deals` : ""}.`);
@@ -397,7 +397,7 @@ function MonthReport({ year, month, cur, prev, prevLabel }: { year: number; mont
                             {p.company_name && <div className="text-xs text-muted">{p.client_name}</div>}
                           </td>
                           <td className={`${td} text-muted`}>{p.exhibition_name}</td>
-                          <td className={`${td} text-muted`}>{p.field === "advance_payment" ? "Advance" : "Payment"}</td>
+                          <td className={`${td} text-muted`}>{p.amount < 0 ? "Correction" : p.field === "advance_payment" ? "Advance" : "Payment"}</td>
                           <td className={`${td} text-right tabular-nums font-medium`}>{fmtMoney(p.amount)}</td>
                         </tr>
                       ))}

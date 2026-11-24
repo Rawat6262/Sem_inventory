@@ -1,10 +1,10 @@
 "use client";
 
-import { Calendar, CheckCircle2, Mail, Pencil, Phone, Plus, SearchX, Target, TrendingUp, Trash2 } from "lucide-react";
+import { Calendar, CheckCircle2, Mail, Pencil, Phone, Plus, SearchX, Target, TrendingUp, Trash2, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
-import { Button, Select } from "@/components/ui";
+import { Alert, Button, Select } from "@/components/ui";
 import { BackLink, Count, EmptyNote, EmptyState, QueryState, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
 import { useMe } from "@/hooks/use-me";
 import { ApiError } from "@/lib/api";
@@ -16,6 +16,7 @@ import {
   fmtMoney,
   markSalaryPaid,
   MONTH_NAMES,
+  removeLeaveDate,
   useEmployee,
   useEmployeesMutation,
   useLeaveMonth,
@@ -45,12 +46,14 @@ export function EmployeeDetail() {
   const [deleting, setDeleting] = useState(false);
   const [giving, setGiving] = useState(false);
   const [addingLeave, setAddingLeave] = useState(false);
+  const [removingLeave, setRemovingLeave] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [settingTarget, setSettingTarget] = useState(false);
   const [addingAchieved, setAddingAchieved] = useState(false);
 
   const remove = useEmployeesMutation((eid: string) => deleteEmployee(eid));
   const markPaid = useEmployeesMutation(markSalaryPaid);
+  const removeLeave = useEmployeesMutation(removeLeaveDate);
   const me = useMe().data;
 
   const canSeeSensitive = employee.data ? employee.data.current_salary !== undefined : false;
@@ -177,8 +180,16 @@ export function EmployeeDetail() {
                           </p>
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {l.leave_dates.map((d) => (
-                              <span key={d} className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-xs">
+                              <span key={d} className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 py-0.5 pr-1 pl-2 text-xs">
                                 {fmtDate(d)}
+                                <button
+                                  type="button"
+                                  onClick={() => setRemovingLeave(d)}
+                                  className="rounded-full p-1 text-muted hover:bg-danger-soft hover:text-danger"
+                                  aria-label={`Remove leave on ${fmtDate(d)}`}
+                                >
+                                  <X className="size-3" aria-hidden />
+                                </button>
                               </span>
                             ))}
                           </div>
@@ -197,6 +208,11 @@ export function EmployeeDetail() {
                     </Button>
                   }
                 >
+                  {markPaid.error && (
+                    <div className="mb-3">
+                      <Alert>{markPaid.error.message}</Alert>
+                    </div>
+                  )}
                   <QueryState queries={[salary]}>
                     {() => {
                       const s = salary.data!;
@@ -339,7 +355,22 @@ export function EmployeeDetail() {
               }}
               onConfirm={() => remove.mutate(e._id, { onSuccess: () => router.push("/modules/employees") })}
             >
-              This also deletes their leave, salary and sales report history. This can&apos;t be undone.
+              This also deletes their leave, unpaid salary and sales report history. Their login keeps working: to stop it, set their status to terminated
+              instead. This can&apos;t be undone.
+            </ConfirmDialog>
+            <ConfirmDialog
+              open={Boolean(removingLeave)}
+              title={`Remove leave on ${fmtDate(removingLeave)}?`}
+              confirmLabel="Remove leave"
+              pending={removeLeave.isPending}
+              error={removeLeave.error?.message}
+              onClose={() => {
+                setRemovingLeave(null);
+                removeLeave.reset();
+              }}
+              onConfirm={() => removingLeave && removeLeave.mutate({ employeeId: e._id, day: removingLeave.slice(0, 10) }, { onSuccess: () => setRemovingLeave(null) })}
+            >
+              If that month&apos;s salary was generated but not paid, it&apos;s worked out again without this day. A paid salary doesn&apos;t change.
             </ConfirmDialog>
             {giving && <IncrementDialog open onClose={() => setGiving(false)} employee={e} />}
             {addingLeave && <LeaveDialog open onClose={() => setAddingLeave(false)} employeeId={e._id} month={leaveMonth} year={leaveYear} />}

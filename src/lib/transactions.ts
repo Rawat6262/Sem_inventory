@@ -1,11 +1,9 @@
 "use client";
 
 // Transactions module: the central ledger across all four payable
-// categories (labour, transporter, supervisor, vendor). Creating a
-// transaction records what's owed (an invoice); paid_amount stays 0 until a
-// separate payment is applied against it — the backend tracks these as two
-// different steps, and this module exposes both. Every call goes through
-// the /api/backend proxy.
+// categories (labour, transporter, supervisor, vendor). A transaction is money
+// already paid out; nothing on it is ever pending. Every call goes through the
+// /api/backend proxy.
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -20,8 +18,6 @@ export const PURPOSES = ["food", "loading", "unloading", "transportation", "othe
 
 export const PAYMENT_MODES = ["cash", "upi", "netbanking", "other"] as const;
 export type PaymentMode = (typeof PAYMENT_MODES)[number];
-
-export type TransactionStatus = "pending" | "partial" | "paid";
 
 type Ref<T> = (T & { _id: string }) | null;
 
@@ -46,9 +42,6 @@ export type Transaction = {
   transaction_date: string;
   vehicle_number?: string | null;
   total_amount: number;
-  paid_amount: number;
-  pending_amount: number;
-  status: TransactionStatus;
   createdAt: string;
 };
 
@@ -71,8 +64,6 @@ export const CATEGORY_LABELS: Record<TransactionCategory, string> = {
   supervisor: "Supervisor",
   vendor: "Vendor",
 };
-
-export const STATUS_LABELS: Record<TransactionStatus, string> = { pending: "Pending", partial: "Partially paid", paid: "Paid" };
 
 const numberFormat = new Intl.NumberFormat("en-IN");
 export const fmt = (n: number | null | undefined) => numberFormat.format(n ?? 0);
@@ -142,6 +133,3 @@ export type EditTransactionInput = {
 export const updateTransaction = ({ id, ...body }: EditTransactionInput) => api(`updatetransaction/${id}`, { method: "PUT", body });
 
 export const deleteTransaction = (id: string) => api(`deletetransaction/${id}`, { method: "DELETE" });
-
-export type AddPaymentInput = { id: string; amount: number; payment_mode?: PaymentMode };
-export const addPayment = ({ id, ...body }: AddPaymentInput) => api(`updatetransactionpayment/${id}`, { method: "PUT", body });

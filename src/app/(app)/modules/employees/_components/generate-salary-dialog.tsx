@@ -63,7 +63,7 @@ function GenerateForm({ employee, onDone }: { employee: Employee; onDone: () => 
     <form onSubmit={submit} className="flex flex-col gap-4">
       <p className="text-sm text-muted">Leave taken that month is deducted automatically, at base salary ÷ 26 per day.</p>
       <Field label="Month">{() => <MonthYearPicker month={month} year={year} onChange={(m, y) => { setMonth(m); setYear(y); }} />}</Field>
-      <Field label="Increment this month (optional)">{(id) => <Input id={id} type="number" inputMode="numeric" min={0} value={increment} onChange={(e) => setIncrement(e.target.value)} />}</Field>
+      <Field label="Increment this month (optional)" hint="If this month was generated before, leave it blank to keep its increment.">{(id) => <Input id={id} type="number" inputMode="numeric" min={0} value={increment} onChange={(e) => setIncrement(e.target.value)} />}</Field>
 
       {save.error && <Alert>{save.error.message}</Alert>}
 

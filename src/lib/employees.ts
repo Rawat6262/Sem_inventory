@@ -124,7 +124,7 @@ export const employeeKeys = {
 
 /** The login behind an employee record, its role's modules and the changes an admin made. */
 export type EmployeeAccess = {
-  user: { _id: string; full_name: string; gmail: string; role: string } | null;
+  user: { _id: string; full_name: string; gmail: string; role: string; active?: boolean } | null;
   roleModules?: string[]; // what the role opens by default (removable; none for admins)
   removedModules?: string[]; // role modules taken away from this user
   extraModules: string[];
@@ -268,6 +268,9 @@ export function missingProfileFields(e: Employee): string[] {
 
 export type AddLeaveInput = { employeeId: string; month: number; year: number; date: string; leave_type: LeaveType; reason?: string };
 export const addLeaveDate = (body: AddLeaveInput) => api("enterleave/leave", { method: "POST", body });
+
+/** `day` is YYYY-MM-DD. A salary not paid yet for that month is worked out again. */
+export const removeLeaveDate = ({ employeeId, day }: { employeeId: string; day: string }) => api(`leave/${employeeId}/${day}`, { method: "DELETE" });
 
 export type GenerateSalaryInput = { employeeId: string; month: number; year: number; increment?: number };
 export const generateSalary = (body: GenerateSalaryInput) => api("salary/generate", { method: "POST", body });

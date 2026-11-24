@@ -26,7 +26,7 @@ export function AccessSection({ employeeId }: { employeeId: string }) {
 }
 
 function NoLogin() {
-  return <EmptyNote>This employee has no login account (no user signed up with this email or phone), so there&apos;s nobody to give access to.</EmptyNote>;
+  return <EmptyNote>This employee has no login account (nobody signed up with their email), so there&apos;s nobody to give access to.</EmptyNote>;
 }
 
 const sameSet = (a: string[], b: string[]) => a.slice().sort().join(",") === b.slice().sort().join(",");
@@ -59,6 +59,7 @@ function AccessForm({ employeeId, access }: { employeeId: string; access: Employ
     <div className="flex flex-col gap-5 rounded-xl border border-line bg-surface p-4">
       <p className="text-sm text-muted">
         Login: <span className="font-medium text-ink">{user.full_name}</span> · {user.gmail} · {roleLabel}
+        {user.active === false && <span className="ml-2 rounded-full bg-danger-soft px-2 py-0.5 text-xs font-medium text-danger">Login turned off</span>}
       </p>
 
       {fromRole.length > 0 && (

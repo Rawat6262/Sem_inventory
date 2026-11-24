@@ -2,11 +2,11 @@
 
 import { useMe } from "@/hooks/use-me";
 import { mayDelete } from "@/lib/permissions";
-import { ArrowLeftRight, Pencil, Plus, Trash2, Wallet } from "lucide-react";
+import { ArrowLeftRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
 import { Button, Select } from "@/components/ui";
-import { Count, EmptyState, QueryState, SearchBox, StatTile, TableWrap, td, th } from "@/components/data-ui";
+import { EmptyState, QueryState, SearchBox, StatTile, TableWrap, td, th } from "@/components/data-ui";
 import { useExhibitionsList } from "@/lib/contractors";
 import {
   CATEGORY_LABELS,
@@ -14,15 +14,12 @@ import {
   entityName,
   fmtDate,
   fmtMoney,
-  STATUS_LABELS,
   TRANSACTION_CATEGORIES,
   useTransactions,
   useTransactionsMutation,
   type Transaction,
   type TransactionCategory,
-  type TransactionStatus,
 } from "@/lib/transactions";
-import { PaymentDialog } from "./_components/payment-dialog";
 import { TransactionDialog } from "./_components/transaction-dialog";
 
 export function TransactionsView() {
@@ -30,46 +27,34 @@ export function TransactionsView() {
   const exhibitions = useExhibitionsList();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<TransactionCategory | "">("");
-  const [status, setStatus] = useState<TransactionStatus | "">("");
   const [exhibitionId, setExhibitionId] = useState("");
 
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Transaction | null>(null);
-  const [paying, setPaying] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState<Transaction | null>(null);
   const remove = useTransactionsMutation((id: string) => deleteTransaction(id));
   const me = useMe().data;
 
-  const totals = useMemo(
-    () =>
-      (transactions.data ?? []).reduce(
-        (acc, t) => ({ total: acc.total + t.total_amount, paid: acc.paid + t.paid_amount, pending: acc.pending + t.pending_amount }),
-        { total: 0, paid: 0, pending: 0 },
-      ),
-    [transactions.data],
-  );
+  const total = useMemo(() => (transactions.data ?? []).reduce((sum, t) => sum + t.total_amount, 0), [transactions.data]);
 
   const q = search.trim().toLowerCase();
   const list = useMemo(
     () =>
       (transactions.data ?? [])
         .filter((t) => !category || t.category === category)
-        .filter((t) => !status || t.status === status)
         .filter((t) => !exhibitionId || t.exhibition?._id === exhibitionId)
         .filter((t) => !q || entityName(t).toLowerCase().includes(q) || t.remark?.toLowerCase().includes(q))
         .sort((a, b) => +new Date(b.transaction_date) - +new Date(a.transaction_date)),
-    [transactions.data, category, status, exhibitionId, q],
+    [transactions.data, category, exhibitionId, q],
   );
 
   return (
     <QueryState queries={[transactions]}>
       {() => (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3">
             <StatTile label="Transactions" value={transactions.data?.length ?? 0} />
-            <StatTile label="Total" value={fmtMoney(totals.total)} />
-            <StatTile label="Paid" value={fmtMoney(totals.paid)} tone="success" />
-            <StatTile label="Pending" value={fmtMoney(totals.pending)} tone={totals.pending > 0 ? "warn" : undefined} />
+            <StatTile label="Total paid" value={fmtMoney(total)} tone="success" />
           </div>
 
           <div className="mt-6 mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -80,14 +65,6 @@ export function TransactionsView() {
                 {TRANSACTION_CATEGORIES.map((c) => (
                   <option key={c} value={c}>
                     {CATEGORY_LABELS[c]}
-                  </option>
-                ))}
-              </Select>
-              <Select value={status} onChange={(e) => setStatus(e.target.value as TransactionStatus | "")} aria-label="Filter by status" className="sm:w-40">
-                <option value="">Any status</option>
-                {(Object.keys(STATUS_LABELS) as TransactionStatus[]).map((s) => (
-                  <option key={s} value={s}>
-                    {STATUS_LABELS[s]}
                   </option>
                 ))}
               </Select>
@@ -108,7 +85,7 @@ export function TransactionsView() {
 
           {transactions.data?.length === 0 ? (
             <EmptyState icon={<ArrowLeftRight className="size-6" />} title="No transactions yet" action={<Button onClick={() => setCreating(true)}>Add the first transaction</Button>}>
-              Record what&apos;s owed to a contractor, supervisor, vendor or transporter.
+              Record money paid to a contractor, supervisor, vendor or transporter.
             </EmptyState>
           ) : list.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">No transactions match these filters.</p>
@@ -122,10 +99,7 @@ export function TransactionsView() {
                     <th className={th}>Paid to</th>
                     <th className={th}>Exhibition</th>
                     <th className={th}>Remark</th>
-                    <th className={`${th} text-right`}>Total</th>
-                    <th className={`${th} text-right`}>Paid</th>
-                    <th className={`${th} text-right`}>Pending</th>
-                    <th className={th}>Status</th>
+                    <th className={`${th} text-right`}>Amount paid</th>
                     <th className={th}>
                       <span className="sr-only">Actions</span>
                     </th>
@@ -143,21 +117,7 @@ export function TransactionsView() {
                       </td>
                       <td className={`${td} text-right tabular-nums`}>{fmtMoney(t.total_amount)}</td>
                       <td className={`${td} text-right`}>
-                        <Count n={t.paid_amount} tone="success" money />
-                      </td>
-                      <td className={`${td} text-right`}>
-                        <Count n={t.pending_amount} tone="warn" money />
-                      </td>
-                      <td className={td}>
-                        <StatusBadge status={t.status} />
-                      </td>
-                      <td className={`${td} text-right`}>
                         <div className="flex justify-end gap-1">
-                          {t.pending_amount > 0 && (
-                            <Button variant="ghost" className="h-8 px-2 text-accent hover:bg-accent-soft" onClick={() => setPaying(t)} aria-label="Record payment">
-                              <Wallet className="size-3.5" aria-hidden />
-                            </Button>
-                          )}
                           <Button variant="ghost" className="h-8 px-2" onClick={() => setEditing(t)} aria-label="Edit">
                             <Pencil className="size-3.5" aria-hidden />
                           </Button>
@@ -180,7 +140,6 @@ export function TransactionsView() {
 
           <TransactionDialog open={creating} onClose={() => setCreating(false)} />
           {editing && <TransactionDialog open onClose={() => setEditing(null)} transaction={editing} />}
-          {paying && <PaymentDialog open onClose={() => setPaying(null)} transaction={paying} />}
 
           <ConfirmDialog
             open={Boolean(deleting)}
@@ -194,19 +153,15 @@ export function TransactionsView() {
             }}
             onConfirm={() => deleting && remove.mutate(deleting._id, { onSuccess: () => setDeleting(null) })}
           >
-            {deleting && deleting.paid_amount > 0 ? (
-              <>Already paid {fmtMoney(deleting.paid_amount)} of this. Deleting it won&apos;t undo that payment. This can&apos;t be undone.</>
-            ) : (
-              <>This can&apos;t be undone.</>
+            {deleting && (
+              <>
+                The {fmtMoney(deleting.total_amount)} payment to <strong className="text-ink">{entityName(deleting)}</strong> will be taken out of all totals and
+                reports. This can&apos;t be undone.
+              </>
             )}
           </ConfirmDialog>
         </>
       )}
     </QueryState>
   );
-}
-
-function StatusBadge({ status }: { status: TransactionStatus }) {
-  const tone = status === "paid" ? "bg-success-soft text-success" : status === "partial" ? "bg-warn-soft text-warn" : "bg-surface-2 text-muted";
-  return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>{STATUS_LABELS[status]}</span>;
 }

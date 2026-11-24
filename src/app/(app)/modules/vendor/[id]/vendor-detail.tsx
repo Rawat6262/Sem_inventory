@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
 import { Button } from "@/components/ui";
-import { BackLink, Count, EmptyState, QueryState, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
+import { BackLink, EmptyState, QueryState, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
 import { ApiError } from "@/lib/api";
 import {
   deleteVendor,
@@ -91,11 +91,9 @@ export function VendorDetail() {
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="mt-6 grid grid-cols-2 gap-3">
               <StatTile label="Exhibitions" value={sum.byExhibition.length} />
-              <StatTile label="Invoiced" value={fmtMoney(sum.totals.total_amount)} />
-              <StatTile label="Paid" value={fmtMoney(sum.totals.paid_amount)} tone="success" />
-              <StatTile label="Pending" value={fmtMoney(sum.totals.pending_amount)} tone={sum.totals.pending_amount > 0 ? "warn" : undefined} />
+              <StatTile label="Total paid" value={fmtMoney(sum.totals.total_amount)} tone="success" />
             </div>
 
             {sum.byExhibition.length === 0 ? (
@@ -105,16 +103,14 @@ export function VendorDetail() {
                 </EmptyState>
               </div>
             ) : (
-              <Section title="By exhibition" description="Invoiced, paid and pending, with what each payment was for.">
+              <Section title="By exhibition" description="What was paid, and what each payment was for.">
                 <TableWrap>
                   <table className="w-full text-sm">
                     <thead className="border-b border-line bg-surface-2/50">
                       <tr>
                         <th className={th}>Exhibition</th>
                         <th className={th}>Purposes</th>
-                        <th className={`${th} text-right`}>Invoiced</th>
                         <th className={`${th} text-right`}>Paid</th>
-                        <th className={`${th} text-right`}>Pending</th>
                         <th className={th}>
                           <span className="sr-only">Actions</span>
                         </th>
@@ -139,12 +135,6 @@ export function VendorDetail() {
                           </td>
                           <td className={`${td} text-right tabular-nums`}>{fmtMoney(entry.total_amount)}</td>
                           <td className={`${td} text-right`}>
-                            <Count n={entry.paid_amount} tone="success" money />
-                          </td>
-                          <td className={`${td} text-right`}>
-                            <Count n={entry.pending_amount} tone="warn" money />
-                          </td>
-                          <td className={`${td} text-right`}>
                             <Button variant="ghost" className="h-8 px-2.5 text-accent hover:bg-accent-soft" onClick={() => setPaying({ exhibitionId: entry.exhibition_id })}>
                               <Plus className="size-3.5" aria-hidden />
                               Pay
@@ -155,9 +145,6 @@ export function VendorDetail() {
                     </tbody>
                   </table>
                 </TableWrap>
-                <p className="mt-2 text-xs text-muted">
-                  Vendors don&apos;t have an agreed amount, unlike contractors or transporters — &ldquo;Pending&rdquo; is just invoiced minus paid.
-                </p>
               </Section>
             )}
 

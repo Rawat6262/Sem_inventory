@@ -294,7 +294,9 @@ export function ContractorDetail() {
                 )
               }
             >
-              {removingExhibition && removingExhibition.stalls.length > 0 ? (
+              {removingExhibition && removingExhibition.stalls.some((s) => s.paid_amount > 0) ? (
+                <>Payments have been made on stalls here, so this exhibition can&apos;t be removed. Delete those payments in Transactions first.</>
+              ) : removingExhibition && removingExhibition.stalls.length > 0 ? (
                 <>
                   This removes all <strong className="text-ink">{fmt(removingExhibition.stalls.length)} stalls</strong> here, including{" "}
                   {fmtMoney(removingExhibition.total_remaining)} still owed. This can&apos;t be undone.
@@ -334,8 +336,8 @@ export function ContractorDetail() {
             >
               {removingStall && removingStall.stall.paid_amount > 0 ? (
                 <>
-                  {fmtMoney(removingStall.stall.paid_amount)} has already been paid on this stall. Removing it won&apos;t undo that payment. This
-                  can&apos;t be undone.
+                  {fmtMoney(removingStall.stall.paid_amount)} has been paid on this stall, so it can&apos;t be removed. Delete those payments in Transactions
+                  first.
                 </>
               ) : (
                 <>This can&apos;t be undone.</>

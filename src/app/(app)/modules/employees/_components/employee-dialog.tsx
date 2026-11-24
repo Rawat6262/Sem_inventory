@@ -55,7 +55,9 @@ function EmployeeForm({ employee, onDone }: { employee?: Employee | null; onDone
         gender: form.gender || undefined,
         joining_date: form.joining_date,
         company: form.company.trim(),
-        current_salary: form.current_salary.trim() ? Number(form.current_salary) : undefined,
+        // Only when it was changed here, so saving other details can't undo a raise given meanwhile.
+        current_salary:
+          form.current_salary.trim() && Number(form.current_salary) !== employee?.current_salary ? Number(form.current_salary) : undefined,
         status: form.status as Employee["status"],
         account_details: hasAccountDetails
           ? { bank_name: form.bank_name.trim() || undefined, account_number: form.account_number.trim() || undefined, ifsc_code: form.ifsc_code.trim() || undefined, upi_id: form.upi_id.trim() || undefined }
@@ -99,7 +101,7 @@ function EmployeeForm({ employee, onDone }: { employee?: Employee | null; onDone
         <Field label={employee ? "Current salary" : "Starting salary (optional)"}>
           {(id) => <Input id={id} type="number" inputMode="numeric" min={0} value={form.current_salary} onChange={(e) => set("current_salary")(e.target.value)} />}
         </Field>
-        <Field label="Status">
+        <Field label="Status" hint={form.status === "terminated" ? "Their login is turned off until this changes." : undefined}>
           {(id) => (
             <Select id={id} value={form.status} onChange={(e) => set("status")(e.target.value)}>
               {EMPLOYEE_STATUSES.map((s) => (
