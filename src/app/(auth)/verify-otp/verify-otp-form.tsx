@@ -18,6 +18,7 @@ export function VerifyOtpForm() {
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  const [mustReset, setMustReset] = useState(false);
 
   // sessionStorage only exists in the browser, so read it after mount.
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -29,13 +30,14 @@ export function VerifyOtpForm() {
     setNotice(null);
     setLoading(true);
     try {
-      const { user } = await authApi<{ user: Me }>("verify-otp", {
+      const { user, mustResetPassword } = await authApi<{ user: Me; mustResetPassword?: boolean }>("verify-otp", {
         method: "POST",
         body: { gmail: gmail.trim().toLowerCase(), otp: otp.trim() },
       });
       clearPendingEmail();
       queryClient.setQueryData(ME_KEY, user);
-      router.replace("/");
+      if (mustResetPassword) setMustReset(true);
+      else router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
@@ -56,6 +58,25 @@ export function VerifyOtpForm() {
     } finally {
       setResending(false);
     }
+  }
+
+  if (mustReset) {
+    return (
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Set your password</h1>
+        <p className="mt-1 text-sm text-muted">
+          Your account is verified, but this email was signed up with two different passwords, so neither works. We&apos;ll email you a code to set yours.
+        </p>
+        <Link
+          href="/forgot-password"
+          // The page stays mounted in the background (Cache Components).
+          onClick={() => setMustReset(false)}
+          className="mt-8 inline-flex h-10 w-full items-center justify-center rounded-lg bg-accent text-sm font-medium text-accent-ink hover:opacity-90"
+        >
+          Set my password
+        </Link>
+      </div>
+    );
   }
 
   return (

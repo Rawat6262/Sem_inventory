@@ -28,5 +28,5 @@ export async function POST(req: Request) {
   }
 
   (await cookies()).set(SESSION_COOKIE, token, sessionCookieOptions);
-  return Response.json({ success: true, user });
+  return Response.json({ success: true, user, mustResetPassword: data.mustResetPassword === true });
 }
