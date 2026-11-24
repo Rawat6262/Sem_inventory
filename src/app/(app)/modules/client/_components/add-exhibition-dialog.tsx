@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Modal } from "@/components/modal";
 import { Alert, Button, Field, Input, Select } from "@/components/ui";
-import { addClientStall, useClientsMutation, useExhibitionsList, type ClientExhibitionEntry } from "@/lib/clients";
+import { addClientStall, exhibitionRefId, useClientsMutation, useExhibitionsList, type ClientExhibitionEntry } from "@/lib/clients";
 import { StallMoneyFields, stallOverpaid } from "./stall-money-fields";
 
 type Props = { open: boolean; onClose: () => void; clientId: string; already: ClientExhibitionEntry[] };
@@ -23,7 +23,7 @@ function AddExhibitionForm({ clientId, already, onDone }: { clientId: string; al
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
   const add = useClientsMutation(addClientStall);
 
-  const alreadyIds = new Set(already.map((e) => (typeof e.exhibition === "object" ? e.exhibition._id : e.exhibition)));
+  const alreadyIds = new Set(already.map((e) => exhibitionRefId(e.exhibition)));
   const available = (exhibitions.data ?? []).filter((e) => !alreadyIds.has(e._id));
 
   function submit(e: React.FormEvent) {

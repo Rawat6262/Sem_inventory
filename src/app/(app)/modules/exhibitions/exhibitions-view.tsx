@@ -209,9 +209,8 @@ export function ExhibitionsView() {
                 <strong className="text-ink">
                   {fmt(deleting.client?.length)} client(s)
                 </strong>{" "}
-                linked. Their stalls and designs aren&apos;t deleted, but will
-                no longer show this exhibition&apos;s details. This can&apos;t
-                be undone.
+                linked. Their stalls aren&apos;t deleted, but any design options
+                for this exhibition will be removed. This can&apos;t be undone.
               </>
             ) : (
               <>This can&apos;t be undone.</>

@@ -29,7 +29,7 @@ export type Stall = {
   history_dates?: string[];
 };
 
-export type ExhibitionRef = { _id: string; name: string; venue?: string; city?: string; startDate?: string; endDate?: string };
+export type ExhibitionRef = { _id: string; name: string; venue?: string; city?: string; startDate?: string; endDate?: string; deleted?: boolean };
 
 export type LabourExhibitionEntry = {
   _id: string;
@@ -96,10 +96,10 @@ export type ContractorSummary = {
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 export function exhibitionRefName(e: LabourExhibitionEntry["exhibition"]): string {
-  return typeof e === "object" ? e.name : "Exhibition";
+  return e && typeof e === "object" ? e.name : "Exhibition";
 }
 export function exhibitionRefId(e: LabourExhibitionEntry["exhibition"]): string {
-  return typeof e === "object" ? e._id : e;
+  return e && typeof e === "object" ? e._id : (e ?? "");
 }
 export function personName(p: Stall["person"], fallback?: string): string {
   if (p && typeof p === "object") return p.name;

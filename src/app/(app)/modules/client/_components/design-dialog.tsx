@@ -54,7 +54,7 @@ function DesignForm({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const option_no = Number(form.option_no);
-    const remarks = form.remarks.trim() || undefined;
+    const remarks = form.remarks.trim(); // sent even when empty, so remarks can be cleared
     if (design) {
       update.mutate({ id: design._id, option_no, remarks }, { onSuccess: onDone });
     } else {

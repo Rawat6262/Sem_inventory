@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
-import { Button } from "@/components/ui";
+import { Alert, Button } from "@/components/ui";
 import { BackLink, Count, EmptyNote, EmptyState, QueryState, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
 import { useMe } from "@/hooks/use-me";
 import { ApiError } from "@/lib/api";
@@ -164,6 +164,12 @@ export function ClientDetail() {
               <StatTile label="Remaining" value={fmtMoney(totals.remaining)} tone={totals.remaining > 0 ? "warn" : undefined} />
             </div>
 
+            {makeFinalMut.error && (
+              <div className="mt-6">
+                <Alert>{makeFinalMut.error.message}</Alert>
+              </div>
+            )}
+
             {c.exhibition.length === 0 ? (
               <div className="mt-8">
                 <EmptyState icon={<CalendarDays className="size-6" />} title="Not booked for any exhibition yet" action={c.rejected ? undefined : <Button onClick={() => setAddingExhibition(true)}>Book for an exhibition</Button>}>
@@ -174,6 +180,7 @@ export function ClientDetail() {
               c.exhibition.map((entry) => {
                 const exhibitionId = exhibitionRefId(entry.exhibition);
                 const exhibitionName = exhibitionRefName(entry.exhibition);
+                const gone = Boolean(entry.exhibition && typeof entry.exhibition === "object" && entry.exhibition.deleted);
                 const designs = entry.designs.map(designOf).filter((d): d is Design => d != null);
                 const nextOptionNo = designs.length > 0 ? Math.max(...designs.map((d) => d.option_no)) + 1 : 1;
 
@@ -184,7 +191,7 @@ export function ClientDetail() {
                     description={`Deal ${fmtMoney(entry.total_deal_amount)} · Paid ${fmtMoney(entry.total_paid)} · Remaining ${fmtMoney(entry.total_remaining)}`}
                     action={
                       <div className="flex gap-2">
-                        <Button variant="secondary" className="h-8 px-2.5" disabled={Boolean(c.rejected)} onClick={() => setStallDialog({ exhibitionId, stall: null })}>
+                        <Button variant="secondary" className="h-8 px-2.5" disabled={Boolean(c.rejected) || gone} onClick={() => setStallDialog({ exhibitionId, stall: null })}>
                           <Plus className="size-3.5" aria-hidden />
                           Add stall
                         </Button>
@@ -277,6 +284,7 @@ export function ClientDetail() {
                       <Button
                         variant="secondary"
                         className="h-8 px-2.5"
+                        disabled={gone}
                         onClick={() => setDesignDialog({ exhibitionId, nextOptionNo, design: null })}
                       >
                         <Plus className="size-3.5" aria-hidden />
@@ -301,6 +309,7 @@ export function ClientDetail() {
                               <button
                                 type="button"
                                 className="font-medium text-accent hover:underline"
+                                disabled={makeFinalMut.isPending}
                                 onClick={() => makeFinalMut.mutate(d._id)}
                               >
                                 Mark final
@@ -382,10 +391,10 @@ export function ClientDetail() {
               ) : removingExhibition && removingExhibition.stalls.length > 0 ? (
                 <>
                   This removes all <strong className="text-ink">{fmt(removingExhibition.stalls.length)} stalls</strong> here, including{" "}
-                  {fmtMoney(removingExhibition.total_remaining)} still remaining. This can&apos;t be undone.
+                  {fmtMoney(removingExhibition.total_remaining)} still remaining, and any design options. This can&apos;t be undone.
                 </>
               ) : (
-                <>This can&apos;t be undone.</>
+                <>Any design options here are removed too. This can&apos;t be undone.</>
               )}
             </ConfirmDialog>
 

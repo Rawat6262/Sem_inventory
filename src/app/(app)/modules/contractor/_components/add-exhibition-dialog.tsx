@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Modal } from "@/components/modal";
 import { Alert, Button, Field, Select } from "@/components/ui";
-import { addExhibitionToContractor, useContractorsMutation, useExhibitionsList, type LabourExhibitionEntry } from "@/lib/contractors";
+import { addExhibitionToContractor, exhibitionRefId, useContractorsMutation, useExhibitionsList, type LabourExhibitionEntry } from "@/lib/contractors";
 
 type Props = { open: boolean; onClose: () => void; labourId: string; already: LabourExhibitionEntry[] };
 
@@ -20,7 +20,7 @@ function AddExhibitionForm({ labourId, already, onDone }: { labourId: string; al
   const [exhibitionId, setExhibitionId] = useState("");
   const add = useContractorsMutation(addExhibitionToContractor);
 
-  const alreadyIds = new Set(already.map((e) => (typeof e.exhibition === "object" ? e.exhibition._id : e.exhibition)));
+  const alreadyIds = new Set(already.map((e) => exhibitionRefId(e.exhibition)));
   const available = (exhibitions.data ?? []).filter((e) => !alreadyIds.has(e._id));
 
   function submit(e: React.FormEvent) {
