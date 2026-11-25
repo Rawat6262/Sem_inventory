@@ -5,6 +5,7 @@ import { mayDelete } from "@/lib/permissions";
 import { ArrowLeftRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Button, Select } from "@/components/ui";
 import { EmptyState, QueryState, SearchBox, StatTile, TableWrap, td, th } from "@/components/data-ui";
 import { useExhibitionsList } from "@/lib/contractors";
@@ -90,49 +91,53 @@ export function TransactionsView() {
           ) : list.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">No transactions match these filters.</p>
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <thead className="border-b border-line bg-surface-2/50">
-                  <tr>
-                    <th className={th}>Date</th>
-                    <th className={th}>Category</th>
-                    <th className={th}>Paid to</th>
-                    <th className={th}>Exhibition</th>
-                    <th className={th}>Remark</th>
-                    <th className={`${th} text-right`}>Amount paid</th>
-                    <th className={th}>
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {list.map((t) => (
-                    <tr key={t._id} className="hover:bg-surface-2/40">
-                      <td className={`${td} text-muted`}>{fmtDate(t.transaction_date)}</td>
-                      <td className={`${td} text-muted`}>{CATEGORY_LABELS[t.category]}</td>
-                      <td className={`${td} font-medium`}>{entityName(t)}</td>
-                      <td className={`${td} text-muted`}>{t.exhibition_name ?? t.exhibition?.name ?? "—"}</td>
-                      <td className={`${td} max-w-48 truncate text-muted`} title={t.remark}>
-                        {t.remark}
-                      </td>
-                      <td className={`${td} text-right tabular-nums`}>{fmtMoney(t.total_amount)}</td>
-                      <td className={`${td} text-right`}>
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" className="h-8 px-2" onClick={() => setEditing(t)} aria-label="Edit">
-                            <Pencil className="size-3.5" aria-hidden />
-                          </Button>
-                          {me && mayDelete(me, t.createdBy) && (
-                            <Button variant="ghost" className="h-8 px-2 hover:text-danger" onClick={() => setDeleting(t)} aria-label="Delete">
-                              <Trash2 className="size-3.5" aria-hidden />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <Paged items={list} resetKey={`${search}|${category}|${exhibitionId}`}>
+              {(pageRows) => (
+                <TableWrap>
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2/50">
+                      <tr>
+                        <th className={th}>Date</th>
+                        <th className={th}>Category</th>
+                        <th className={th}>Paid to</th>
+                        <th className={th}>Exhibition</th>
+                        <th className={th}>Remark</th>
+                        <th className={`${th} text-right`}>Amount paid</th>
+                        <th className={th}>
+                          <span className="sr-only">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {pageRows.map((t) => (
+                        <tr key={t._id} className="hover:bg-surface-2/40">
+                          <td className={`${td} text-muted`}>{fmtDate(t.transaction_date)}</td>
+                          <td className={`${td} text-muted`}>{CATEGORY_LABELS[t.category]}</td>
+                          <td className={`${td} font-medium`}>{entityName(t)}</td>
+                          <td className={`${td} text-muted`}>{t.exhibition_name ?? t.exhibition?.name ?? "—"}</td>
+                          <td className={`${td} max-w-48 truncate text-muted`} title={t.remark}>
+                            {t.remark}
+                          </td>
+                          <td className={`${td} text-right tabular-nums`}>{fmtMoney(t.total_amount)}</td>
+                          <td className={`${td} text-right`}>
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" className="h-8 px-2" onClick={() => setEditing(t)} aria-label="Edit">
+                                <Pencil className="size-3.5" aria-hidden />
+                              </Button>
+                              {me && mayDelete(me, t.createdBy) && (
+                                <Button variant="ghost" className="h-8 px-2 hover:text-danger" onClick={() => setDeleting(t)} aria-label="Delete">
+                                  <Trash2 className="size-3.5" aria-hidden />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              )}
+            </Paged>
           )}
           <p className="mt-2 text-xs text-muted">
             Showing {list.length} of {transactions.data?.length ?? 0} transactions.

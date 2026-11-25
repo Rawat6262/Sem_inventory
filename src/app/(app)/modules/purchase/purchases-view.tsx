@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { EmptyState, QueryState, SearchBox, StatTile, TableWrap, fmtMoney, td, th } from "@/components/data-ui";
 import { Button, cn } from "@/components/ui";
+import { Paged } from "@/components/pagination";
 import { useMe } from "@/hooks/use-me";
 import { canRecordPurchases } from "@/lib/permissions";
 import { usePurchases, type Purchase, type PurchaseStatus } from "@/lib/purchases";
@@ -88,30 +89,34 @@ export function PurchasesView() {
           ) : shown.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">{q ? "No purchases match this search." : tab === "pending" ? "Nothing is waiting to be received." : "No purchases here."}</p>
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <thead className="border-b border-line bg-surface-2/50">
-                  <tr>
-                    <th className={th}>Purchase</th>
-                    <th className={th}>Date</th>
-                    <th className={th}>Vendor</th>
-                    <th className={th}>Items</th>
-                    <th className={th}>Warehouse</th>
-                    <th className={th}>Bought by</th>
-                    <th className={`${th} text-right`}>Total</th>
-                    <th className={th}>Status</th>
-                    <th className={th}>
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {shown.map((p) => (
-                    <PurchaseRow key={p._id} p={p} />
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <Paged items={shown} resetKey={`${tab}|${search}`}>
+              {(pageRows) => (
+                <TableWrap>
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2/50">
+                      <tr>
+                        <th className={th}>Purchase</th>
+                        <th className={th}>Date</th>
+                        <th className={th}>Vendor</th>
+                        <th className={th}>Items</th>
+                        <th className={th}>Warehouse</th>
+                        <th className={th}>Bought by</th>
+                        <th className={`${th} text-right`}>Total</th>
+                        <th className={th}>Status</th>
+                        <th className={th}>
+                          <span className="sr-only">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {pageRows.map((p) => (
+                        <PurchaseRow key={p._id} p={p} />
+                      ))}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              )}
+            </Paged>
           )}
 
           <PurchaseDialog open={creating} onClose={() => setCreating(false)} />

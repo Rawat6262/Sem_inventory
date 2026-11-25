@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button, Input } from "@/components/ui";
 import { EmptyNote, QueryState, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
+import { Paged } from "@/components/pagination";
 import {
   fmt,
   fmtDate,
@@ -84,37 +85,41 @@ function MonthGrid({ dir, rows, onOpen }: { dir: Direction; rows: MonthRow[]; on
   }
   const sorted = [...rows].sort((a, b) => b.year - a.year || b.month - a.month);
   return (
-    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {sorted.map((r) => (
-        <li key={`${r.year}-${r.month}`}>
-          <button
-            type="button"
-            onClick={() => onOpen(r.year, r.month)}
-            className="w-full rounded-xl border border-line bg-surface p-4 text-left transition-colors hover:border-accent/50 hover:bg-accent-soft/40"
-          >
-            <div className="font-medium">
-              {r.month_name} {r.year}
-            </div>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-muted">
-              <div>
-                {fmt(r.total_challans)} challan{r.total_challans === 1 ? "" : "s"}
-              </div>
-              <div>{fmt(r.total_quantity)} units sent</div>
-              {dir === "incoming" ? (
-                <>
-                  <div>{fmt(r.total_received)} returned</div>
-                  <div className={(r.total_lost ?? 0) + (r.total_dead ?? 0) > 0 ? "text-danger" : ""}>
-                    {fmt((r.total_lost ?? 0) + (r.total_dead ?? 0))} lost/dead
+    <Paged items={sorted} size={12}>
+      {(pageRows) => (
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {pageRows.map((r) => (
+            <li key={`${r.year}-${r.month}`}>
+              <button
+                type="button"
+                onClick={() => onOpen(r.year, r.month)}
+                className="w-full rounded-xl border border-line bg-surface p-4 text-left transition-colors hover:border-accent/50 hover:bg-accent-soft/40"
+              >
+                <div className="font-medium">
+                  {r.month_name} {r.year}
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-muted">
+                  <div>
+                    {fmt(r.total_challans)} challan{r.total_challans === 1 ? "" : "s"}
                   </div>
-                </>
-              ) : (
-                <div>{fmt(r.total_received)} returned so far</div>
-              )}
-            </div>
-          </button>
-        </li>
-      ))}
-    </ul>
+                  <div>{fmt(r.total_quantity)} units sent</div>
+                  {dir === "incoming" ? (
+                    <>
+                      <div>{fmt(r.total_received)} returned</div>
+                      <div className={(r.total_lost ?? 0) + (r.total_dead ?? 0) > 0 ? "text-danger" : ""}>
+                        {fmt((r.total_lost ?? 0) + (r.total_dead ?? 0))} lost/dead
+                      </div>
+                    </>
+                  ) : (
+                    <div>{fmt(r.total_received)} returned so far</div>
+                  )}
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Paged>
   );
 }
 
@@ -153,42 +158,46 @@ function MonthView({
                 </div>
               ) : (
                 <div className="mt-4">
-                  <TableWrap>
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-line bg-surface-2/50">
-                        <tr>
-                          <th className={th}>Document</th>
-                          <th className={th}>Date</th>
-                          <th className={th}>Exhibition</th>
-                          <th className={th}>Warehouse</th>
-                          <th className={th}>Vehicle</th>
-                          <th className={`${th} text-right`}>Items</th>
-                          <th className={`${th} text-right`}>Quantity</th>
-                          {dir === "incoming" && <th className={`${th} text-right`}>Lost/dead</th>}
-                          <ActionsHeader />
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-line">
-                        {d.challans.map((c) => (
-                          <tr key={c.document_number}>
-                            <td className={`${td} font-medium`}>{c.document_number}</td>
-                            <td className={`${td} text-muted`}>{fmtDate(c.date)}</td>
-                            <td className={td}>{c.exhibition_name}</td>
-                            <td className={`${td} text-muted`}>{c.from_warehouse_name}</td>
-                            <td className={`${td} text-muted`}>{c.vehicle_no}</td>
-                            <td className={`${td} text-right tabular-nums`}>{fmt(c.item_count)}</td>
-                            <td className={`${td} text-right tabular-nums`}>{fmt(c.total_quantity)}</td>
-                            {dir === "incoming" && (
-                              <td className={`${td} text-right tabular-nums ${(c.total_lost ?? 0) + (c.total_dead ?? 0) > 0 ? "text-danger" : ""}`}>
-                                {fmt((c.total_lost ?? 0) + (c.total_dead ?? 0))}
-                              </td>
-                            )}
-                            <PrintCell dir={dir} id={c._id} readOnly={c.readOnly} />
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </TableWrap>
+                  <Paged items={d.challans} resetKey={`${d.filter.year}-${d.filter.month_name}`}>
+                    {(pageRows) => (
+                      <TableWrap>
+                        <table className="w-full text-sm">
+                          <thead className="border-b border-line bg-surface-2/50">
+                            <tr>
+                              <th className={th}>Document</th>
+                              <th className={th}>Date</th>
+                              <th className={th}>Exhibition</th>
+                              <th className={th}>Warehouse</th>
+                              <th className={th}>Vehicle</th>
+                              <th className={`${th} text-right`}>Items</th>
+                              <th className={`${th} text-right`}>Quantity</th>
+                              {dir === "incoming" && <th className={`${th} text-right`}>Lost/dead</th>}
+                              <ActionsHeader />
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {pageRows.map((c) => (
+                              <tr key={c.document_number}>
+                                <td className={`${td} font-medium`}>{c.document_number}</td>
+                                <td className={`${td} text-muted`}>{fmtDate(c.date)}</td>
+                                <td className={td}>{c.exhibition_name}</td>
+                                <td className={`${td} text-muted`}>{c.from_warehouse_name}</td>
+                                <td className={`${td} text-muted`}>{c.vehicle_no}</td>
+                                <td className={`${td} text-right tabular-nums`}>{fmt(c.item_count)}</td>
+                                <td className={`${td} text-right tabular-nums`}>{fmt(c.total_quantity)}</td>
+                                {dir === "incoming" && (
+                                  <td className={`${td} text-right tabular-nums ${(c.total_lost ?? 0) + (c.total_dead ?? 0) > 0 ? "text-danger" : ""}`}>
+                                    {fmt((c.total_lost ?? 0) + (c.total_dead ?? 0))}
+                                  </td>
+                                )}
+                                <PrintCell dir={dir} id={c._id} readOnly={c.readOnly} />
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </TableWrap>
+                    )}
+                  </Paged>
                 </div>
               )}
             </Section>
@@ -204,36 +213,40 @@ function SearchResults({ dir, keyword, challans }: { dir: Direction; keyword: st
     return <EmptyNote>No challans match &ldquo;{keyword}&rdquo;.</EmptyNote>;
   }
   return (
-    <TableWrap>
-      <table className="w-full text-sm">
-        <thead className="border-b border-line bg-surface-2/50">
-          <tr>
-            <th className={th}>Document</th>
-            <th className={th}>Date</th>
-            <th className={th}>Exhibition</th>
-            <th className={th}>Warehouse</th>
-            <th className={th}>Transporter</th>
-            <th className={th}>Vehicle</th>
-            <th className={`${th} text-right`}>Items</th>
-            <ActionsHeader />
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line">
-          {challans.map((c) => (
-            <tr key={c._id}>
-              <td className={`${td} font-medium`}>{c.document_number}</td>
-              <td className={`${td} text-muted`}>{fmtDate(c.date)}</td>
-              <td className={td}>{c.exhibition_name}</td>
-              <td className={`${td} text-muted`}>{c.from_warehouse_name}</td>
-              <td className={`${td} text-muted`}>{c.transporter_name}</td>
-              <td className={`${td} text-muted`}>{c.vehicle_no}</td>
-              <td className={`${td} text-right tabular-nums`}>{fmt(c.items?.length ?? 0)}</td>
-              <PrintCell dir={dir} id={c._id} readOnly={c.readOnly} />
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </TableWrap>
+    <Paged items={challans} resetKey={keyword}>
+      {(pageRows) => (
+        <TableWrap>
+          <table className="w-full text-sm">
+            <thead className="border-b border-line bg-surface-2/50">
+              <tr>
+                <th className={th}>Document</th>
+                <th className={th}>Date</th>
+                <th className={th}>Exhibition</th>
+                <th className={th}>Warehouse</th>
+                <th className={th}>Transporter</th>
+                <th className={th}>Vehicle</th>
+                <th className={`${th} text-right`}>Items</th>
+                <ActionsHeader />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {pageRows.map((c) => (
+                <tr key={c._id}>
+                  <td className={`${td} font-medium`}>{c.document_number}</td>
+                  <td className={`${td} text-muted`}>{fmtDate(c.date)}</td>
+                  <td className={td}>{c.exhibition_name}</td>
+                  <td className={`${td} text-muted`}>{c.from_warehouse_name}</td>
+                  <td className={`${td} text-muted`}>{c.transporter_name}</td>
+                  <td className={`${td} text-muted`}>{c.vehicle_no}</td>
+                  <td className={`${td} text-right tabular-nums`}>{fmt(c.items?.length ?? 0)}</td>
+                  <PrintCell dir={dir} id={c._id} readOnly={c.readOnly} />
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableWrap>
+      )}
+    </Paged>
   );
 }
 

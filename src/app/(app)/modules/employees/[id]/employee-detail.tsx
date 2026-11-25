@@ -4,6 +4,7 @@ import { Calendar, CheckCircle2, Mail, Pencil, Phone, Plus, SearchX, Target, Tre
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Alert, Button, Select } from "@/components/ui";
 import { BackLink, Count, EmptyNote, EmptyState, QueryState, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
 import { useMe } from "@/hooks/use-me";
@@ -219,51 +220,55 @@ export function EmployeeDetail() {
                       return s.salaries.length === 0 ? (
                         <EmptyNote>No salary generated yet.</EmptyNote>
                       ) : (
-                        <TableWrap>
-                          <table className="w-full text-sm">
-                            <thead className="border-b border-line bg-surface-2/50">
-                              <tr>
-                                <th className={th}>Month</th>
-                                <th className={`${th} text-right`}>Base</th>
-                                <th className={`${th} text-right`}>Increment</th>
-                                <th className={`${th} text-right`}>Leave deduction</th>
-                                <th className={`${th} text-right`}>Final</th>
-                                <th className={th}>Status</th>
-                                <th className={th}>
-                                  <span className="sr-only">Actions</span>
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-line">
-                              {s.salaries.map((row) => (
-                                <tr key={row._id}>
-                                  <td className={`${td} font-medium`}>
-                                    {MONTH_NAMES[row.month - 1]} {row.year}
-                                  </td>
-                                  <td className={`${td} text-right tabular-nums`}>{fmtMoney(row.base_salary)}</td>
-                                  <td className={`${td} text-right`}>
-                                    <Count n={row.increment} tone="success" money />
-                                  </td>
-                                  <td className={`${td} text-right`}>
-                                    <Count n={row.leave_deduction} tone="danger" money />
-                                  </td>
-                                  <td className={`${td} text-right tabular-nums font-medium`}>{fmtMoney(row.final_salary)}</td>
-                                  <td className={td}>
-                                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${row.payment_status === "paid" ? "bg-success-soft text-success" : "bg-surface-2 text-muted"}`}>{row.payment_status}</span>
-                                  </td>
-                                  <td className={`${td} text-right`}>
-                                    {row.payment_status === "pending" && (
-                                      <Button variant="ghost" className="h-8 px-2.5 text-accent hover:bg-accent-soft" loading={markPaid.isPending} onClick={() => markPaid.mutate(row._id)}>
-                                        <CheckCircle2 className="size-3.5" aria-hidden />
-                                        Mark paid
-                                      </Button>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </TableWrap>
+                        <Paged items={s.salaries}>
+                          {(pageRows) => (
+                            <TableWrap>
+                              <table className="w-full text-sm">
+                                <thead className="border-b border-line bg-surface-2/50">
+                                  <tr>
+                                    <th className={th}>Month</th>
+                                    <th className={`${th} text-right`}>Base</th>
+                                    <th className={`${th} text-right`}>Increment</th>
+                                    <th className={`${th} text-right`}>Leave deduction</th>
+                                    <th className={`${th} text-right`}>Final</th>
+                                    <th className={th}>Status</th>
+                                    <th className={th}>
+                                      <span className="sr-only">Actions</span>
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-line">
+                                  {pageRows.map((row) => (
+                                    <tr key={row._id}>
+                                      <td className={`${td} font-medium`}>
+                                        {MONTH_NAMES[row.month - 1]} {row.year}
+                                      </td>
+                                      <td className={`${td} text-right tabular-nums`}>{fmtMoney(row.base_salary)}</td>
+                                      <td className={`${td} text-right`}>
+                                        <Count n={row.increment} tone="success" money />
+                                      </td>
+                                      <td className={`${td} text-right`}>
+                                        <Count n={row.leave_deduction} tone="danger" money />
+                                      </td>
+                                      <td className={`${td} text-right tabular-nums font-medium`}>{fmtMoney(row.final_salary)}</td>
+                                      <td className={td}>
+                                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${row.payment_status === "paid" ? "bg-success-soft text-success" : "bg-surface-2 text-muted"}`}>{row.payment_status}</span>
+                                      </td>
+                                      <td className={`${td} text-right`}>
+                                        {row.payment_status === "pending" && (
+                                          <Button variant="ghost" className="h-8 px-2.5 text-accent hover:bg-accent-soft" loading={markPaid.isPending} onClick={() => markPaid.mutate(row._id)}>
+                                            <CheckCircle2 className="size-3.5" aria-hidden />
+                                            Mark paid
+                                          </Button>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </TableWrap>
+                          )}
+                        </Paged>
                       );
                     }}
                   </QueryState>

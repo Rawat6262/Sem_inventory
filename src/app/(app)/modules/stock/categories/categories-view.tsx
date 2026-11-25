@@ -3,9 +3,10 @@
 import { Pencil, Plus, Tags, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ConfirmDialog, Modal } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Alert, Button, Field, Input } from "@/components/ui";
 import { useMe } from "@/hooks/use-me";
-import { canDeleteOwned } from "@/lib/permissions";
+import { canDeleteOwned, canEditStock } from "@/lib/permissions";
 import {
   categoryName,
   deleteCategory,
@@ -58,42 +59,48 @@ export function CategoriesView() {
               Categories group products, for example Furniture, Lighting or Carpets.
             </EmptyState>
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <thead className="border-b border-line bg-surface-2/50">
-                  <tr>
-                    <th className={th}>Category</th>
-                    <th className={`${th} text-right`}>Products</th>
-                    <th className={th}>
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {list.map((c) => (
-                    <tr key={c._id}>
-                      <td className={`${td} font-medium`}>{c.category}</td>
-                      <td className={`${td} text-right tabular-nums`}>{fmt(usage.get(c.category) ?? 0)}</td>
-                      <td className={`${td} text-right`}>
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(c)} aria-label={`Rename ${c.category}`}>
-                            <Pencil className="size-3.5" aria-hidden />
-                            <span className="hidden sm:inline">Rename</span>
-                          </Button>
-                          {me && canDeleteOwned(me, c.createdBy) && (
-                            <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(c)} aria-label={`Delete ${c.category}`}>
-                              <Trash2 className="size-3.5" aria-hidden />
-                              <span className="hidden sm:inline">Delete</span>
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {list.length === 0 && <p className="px-4 py-10 text-center text-sm text-muted">No categories match &ldquo;{search}&rdquo;.</p>}
-            </TableWrap>
+            <Paged items={list} resetKey={search}>
+              {(pageRows) => (
+                <TableWrap>
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2/50">
+                      <tr>
+                        <th className={th}>Category</th>
+                        <th className={`${th} text-right`}>Products</th>
+                        <th className={th}>
+                          <span className="sr-only">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {pageRows.map((c) => (
+                        <tr key={c._id}>
+                          <td className={`${td} font-medium`}>{c.category}</td>
+                          <td className={`${td} text-right tabular-nums`}>{fmt(usage.get(c.category) ?? 0)}</td>
+                          <td className={`${td} text-right`}>
+                            <div className="flex justify-end gap-1">
+                              {me && canEditStock(me, c.createdBy) && (
+                                <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(c)} aria-label={`Rename ${c.category}`}>
+                                  <Pencil className="size-3.5" aria-hidden />
+                                  <span className="hidden sm:inline">Rename</span>
+                                </Button>
+                              )}
+                              {me && canDeleteOwned(me, c.createdBy) && (
+                                <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(c)} aria-label={`Delete ${c.category}`}>
+                                  <Trash2 className="size-3.5" aria-hidden />
+                                  <span className="hidden sm:inline">Delete</span>
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {list.length === 0 && <p className="px-4 py-10 text-center text-sm text-muted">No categories match &ldquo;{search}&rdquo;.</p>}
+                </TableWrap>
+              )}
+            </Paged>
           )}
 
           <CategoryDialog category={editing} onClose={() => setEditing(null)} />

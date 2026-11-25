@@ -2,6 +2,7 @@
 
 import { TriangleAlert } from "lucide-react";
 import Link from "next/link";
+import { Paged } from "@/components/pagination";
 import { fmt, fmtDate, fmtMoney, useStockOverview } from "@/lib/reports";
 import { EmptyNote, QueryState, Section, StatTile, TableWrap, td, th } from "../_components/reports-ui";
 
@@ -27,38 +28,42 @@ export function StockOverviewView() {
               {d.warehouses.length === 0 ? (
                 <EmptyNote>No warehouses yet.</EmptyNote>
               ) : (
-                <TableWrap>
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-line bg-surface-2/50">
-                      <tr>
-                        <th className={th}>Warehouse</th>
-                        <th className={`${th} text-right`}>Products</th>
-                        <th className={`${th} text-right`}>Total</th>
-                        <th className={`${th} text-right`}>On shelf</th>
-                        <th className={`${th} text-right`}>Out</th>
-                        <th className={`${th} text-right`}>Repair</th>
-                        <th className={`${th} text-right`}>Lost</th>
-                        <th className={`${th} text-right`}>Dead</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {d.warehouses.map((w) => (
-                        <tr key={w.warehouse_id}>
-                          <td className={td}>
-                            {w.warehouse_name} (#{w.warehouse_no})
-                          </td>
-                          <td className={`${td} text-right`}>{w.product_count}</td>
-                          <td className={`${td} text-right`}>{fmt(w.no_of_item)}</td>
-                          <td className={`${td} text-right text-success`}>{fmt(w.total_no)}</td>
-                          <td className={`${td} text-right text-accent`}>{fmt(w.out_for_exhibition)}</td>
-                          <td className={`${td} text-right text-muted`}>{fmt(w.repair_item)}</td>
-                          <td className={`${td} text-right text-danger`}>{fmt(w.lost)}</td>
-                          <td className={`${td} text-right text-danger`}>{fmt(w.dead)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </TableWrap>
+                <Paged items={d.warehouses}>
+                  {(pageRows) => (
+                    <TableWrap>
+                      <table className="w-full text-sm">
+                        <thead className="border-b border-line bg-surface-2/50">
+                          <tr>
+                            <th className={th}>Warehouse</th>
+                            <th className={`${th} text-right`}>Products</th>
+                            <th className={`${th} text-right`}>Total</th>
+                            <th className={`${th} text-right`}>On shelf</th>
+                            <th className={`${th} text-right`}>Out</th>
+                            <th className={`${th} text-right`}>Repair</th>
+                            <th className={`${th} text-right`}>Lost</th>
+                            <th className={`${th} text-right`}>Dead</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                          {pageRows.map((w) => (
+                            <tr key={w.warehouse_id}>
+                              <td className={td}>
+                                {w.warehouse_name} (#{w.warehouse_no})
+                              </td>
+                              <td className={`${td} text-right`}>{w.product_count}</td>
+                              <td className={`${td} text-right`}>{fmt(w.no_of_item)}</td>
+                              <td className={`${td} text-right text-success`}>{fmt(w.total_no)}</td>
+                              <td className={`${td} text-right text-accent`}>{fmt(w.out_for_exhibition)}</td>
+                              <td className={`${td} text-right text-muted`}>{fmt(w.repair_item)}</td>
+                              <td className={`${td} text-right text-danger`}>{fmt(w.lost)}</td>
+                              <td className={`${td} text-right text-danger`}>{fmt(w.dead)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </TableWrap>
+                  )}
+                </Paged>
               )}
             </Section>
 
@@ -76,36 +81,40 @@ export function StockOverviewView() {
                       <StatTile label="Units on the way" value={fmt(d.purchases.pending_units)} />
                       <StatTile label="Value" value={fmtMoney(d.purchases.pending_amount)} />
                     </div>
-                    <TableWrap>
-                      <table className="w-full text-sm">
-                        <thead className="border-b border-line bg-surface-2/50">
-                          <tr>
-                            <th className={th}>Purchase</th>
-                            <th className={th}>Date</th>
-                            <th className={th}>Vendor</th>
-                            <th className={th}>Into warehouse</th>
-                            <th className={`${th} text-right`}>Units</th>
-                            <th className={`${th} text-right`}>Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-line">
-                          {d.purchases.pending.map((p) => (
-                            <tr key={p.id}>
-                              <td className={td}>
-                                <Link href={`/modules/purchase/${p.id}`} className="font-medium hover:text-accent hover:underline">
-                                  {p.purchase_number}
-                                </Link>
-                              </td>
-                              <td className={`${td} text-muted`}>{fmtDate(p.date)}</td>
-                              <td className={td}>{p.vendor_name}</td>
-                              <td className={`${td} text-muted`}>{p.warehouse_name}</td>
-                              <td className={`${td} text-right tabular-nums`}>{fmt(p.units)}</td>
-                              <td className={`${td} text-right tabular-nums`}>{fmtMoney(p.total_amount)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </TableWrap>
+                    <Paged items={d.purchases.pending}>
+                      {(pageRows) => (
+                        <TableWrap>
+                          <table className="w-full text-sm">
+                            <thead className="border-b border-line bg-surface-2/50">
+                              <tr>
+                                <th className={th}>Purchase</th>
+                                <th className={th}>Date</th>
+                                <th className={th}>Vendor</th>
+                                <th className={th}>Into warehouse</th>
+                                <th className={`${th} text-right`}>Units</th>
+                                <th className={`${th} text-right`}>Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-line">
+                              {pageRows.map((p) => (
+                                <tr key={p.id}>
+                                  <td className={td}>
+                                    <Link href={`/modules/purchase/${p.id}`} className="font-medium hover:text-accent hover:underline">
+                                      {p.purchase_number}
+                                    </Link>
+                                  </td>
+                                  <td className={`${td} text-muted`}>{fmtDate(p.date)}</td>
+                                  <td className={td}>{p.vendor_name}</td>
+                                  <td className={`${td} text-muted`}>{p.warehouse_name}</td>
+                                  <td className={`${td} text-right tabular-nums`}>{fmt(p.units)}</td>
+                                  <td className={`${td} text-right tabular-nums`}>{fmtMoney(p.total_amount)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </TableWrap>
+                      )}
+                    </Paged>
                   </>
                 )}
               </Section>
@@ -118,33 +127,37 @@ export function StockOverviewView() {
               {d.low_stock.length === 0 ? (
                 <EmptyNote>Nothing is running low.</EmptyNote>
               ) : (
-                <TableWrap>
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-line bg-surface-2/50">
-                      <tr>
-                        <th className={th}>Product</th>
-                        <th className={th}>Warehouse</th>
-                        <th className={`${th} text-right`}>On shelf</th>
-                        <th className={`${th} text-right`}>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {d.low_stock.map((p) => (
-                        <tr key={p.product_id}>
-                          <td className={td}>
-                            <span className="inline-flex items-center gap-1.5">
-                              <TriangleAlert className="size-3.5 text-warn" aria-hidden />
-                              {p.product_name}
-                            </span>
-                          </td>
-                          <td className={`${td} text-muted`}>{p.warehouse_name}</td>
-                          <td className={`${td} text-right font-medium text-warn`}>{fmt(p.total_no)}</td>
-                          <td className={`${td} text-right text-muted`}>{fmt(p.no_of_item)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </TableWrap>
+                <Paged items={d.low_stock}>
+                  {(pageRows) => (
+                    <TableWrap>
+                      <table className="w-full text-sm">
+                        <thead className="border-b border-line bg-surface-2/50">
+                          <tr>
+                            <th className={th}>Product</th>
+                            <th className={th}>Warehouse</th>
+                            <th className={`${th} text-right`}>On shelf</th>
+                            <th className={`${th} text-right`}>Total</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                          {pageRows.map((p) => (
+                            <tr key={p.product_id}>
+                              <td className={td}>
+                                <span className="inline-flex items-center gap-1.5">
+                                  <TriangleAlert className="size-3.5 text-warn" aria-hidden />
+                                  {p.product_name}
+                                </span>
+                              </td>
+                              <td className={`${td} text-muted`}>{p.warehouse_name}</td>
+                              <td className={`${td} text-right font-medium text-warn`}>{fmt(p.total_no)}</td>
+                              <td className={`${td} text-right text-muted`}>{fmt(p.no_of_item)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </TableWrap>
+                  )}
+                </Paged>
               )}
             </Section>
           </>

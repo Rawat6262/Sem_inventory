@@ -4,6 +4,7 @@ import { MapPin, Pencil, Plus, Trash2, Warehouse as WarehouseIcon } from "lucide
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Button } from "@/components/ui";
 import { useMe } from "@/hooks/use-me";
 import { canDeleteOwned, canEditStock } from "@/lib/permissions";
@@ -95,61 +96,65 @@ export function WarehousesView() {
           ) : list.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">No warehouses match &ldquo;{search}&rdquo;.</p>
           ) : (
-            <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {list.map((w) => {
-                const t = totalsOf(perWarehouse.get(w._id) ?? []);
-                return (
-                  <li key={w._id} className="flex flex-col rounded-xl border border-line bg-surface">
-                    <Link href={`/modules/stock/warehouses/${w._id}`} className="group flex-1 p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <h2 className="font-medium group-hover:text-accent">{warehouseLabel(w)}</h2>
-                      </div>
-                      <p className="mt-1 flex items-start gap-1 text-sm text-muted">
-                        <MapPin className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                        <span className="line-clamp-2">
-                          {[w.address, w.city, w.state].filter(Boolean).join(", ")}
-                        </span>
-                      </p>
-                      <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
-                        <div className="rounded-lg bg-surface-2/60 py-2">
-                          <dt className="text-xs text-muted">Products</dt>
-                          <dd className="font-semibold tabular-nums">{fmt(t.products)}</dd>
+            <Paged items={list} resetKey={search} size={12}>
+              {(pageRows) => (
+                <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {pageRows.map((w) => {
+                    const t = totalsOf(perWarehouse.get(w._id) ?? []);
+                    return (
+                      <li key={w._id} className="flex flex-col rounded-xl border border-line bg-surface">
+                        <Link href={`/modules/stock/warehouses/${w._id}`} className="group flex-1 p-4">
+                          <div className="flex items-start justify-between gap-2">
+                            <h2 className="font-medium group-hover:text-accent">{warehouseLabel(w)}</h2>
+                          </div>
+                          <p className="mt-1 flex items-start gap-1 text-sm text-muted">
+                            <MapPin className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                            <span className="line-clamp-2">
+                              {[w.address, w.city, w.state].filter(Boolean).join(", ")}
+                            </span>
+                          </p>
+                          <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
+                            <div className="rounded-lg bg-surface-2/60 py-2">
+                              <dt className="text-xs text-muted">Products</dt>
+                              <dd className="font-semibold tabular-nums">{fmt(t.products)}</dd>
+                            </div>
+                            <div className="rounded-lg bg-surface-2/60 py-2">
+                              <dt className="text-xs text-muted">On shelf</dt>
+                              <dd className="font-semibold tabular-nums text-accent">{fmt(t.shelf)}</dd>
+                            </div>
+                            <div className="rounded-lg bg-surface-2/60 py-2">
+                              <dt className="text-xs text-muted">Out</dt>
+                              <dd className="font-semibold tabular-nums">{fmt(t.out)}</dd>
+                            </div>
+                          </dl>
+                          {(t.repair > 0 || t.lostDead > 0) && (
+                            <p className="mt-2 text-xs">
+                              {t.repair > 0 && <span className="text-warn">{fmt(t.repair)} in repair</span>}
+                              {t.repair > 0 && t.lostDead > 0 && <span className="text-muted"> · </span>}
+                              {t.lostDead > 0 && <span className="text-danger">{fmt(t.lostDead)} lost or dead</span>}
+                            </p>
+                          )}
+                        </Link>
+                        <div className="flex justify-end gap-1 border-t border-line px-2 py-1.5">
+                          {me && canEditStock(me, w.createdBy) && (
+                            <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(w)}>
+                              <Pencil className="size-3.5" aria-hidden />
+                              Edit
+                            </Button>
+                          )}
+                          {me && canDeleteOwned(me, w.createdBy) && (
+                            <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(w)}>
+                              <Trash2 className="size-3.5" aria-hidden />
+                              Delete
+                            </Button>
+                          )}
                         </div>
-                        <div className="rounded-lg bg-surface-2/60 py-2">
-                          <dt className="text-xs text-muted">On shelf</dt>
-                          <dd className="font-semibold tabular-nums text-accent">{fmt(t.shelf)}</dd>
-                        </div>
-                        <div className="rounded-lg bg-surface-2/60 py-2">
-                          <dt className="text-xs text-muted">Out</dt>
-                          <dd className="font-semibold tabular-nums">{fmt(t.out)}</dd>
-                        </div>
-                      </dl>
-                      {(t.repair > 0 || t.lostDead > 0) && (
-                        <p className="mt-2 text-xs">
-                          {t.repair > 0 && <span className="text-warn">{fmt(t.repair)} in repair</span>}
-                          {t.repair > 0 && t.lostDead > 0 && <span className="text-muted"> · </span>}
-                          {t.lostDead > 0 && <span className="text-danger">{fmt(t.lostDead)} lost or dead</span>}
-                        </p>
-                      )}
-                    </Link>
-                    <div className="flex justify-end gap-1 border-t border-line px-2 py-1.5">
-                      {me && canEditStock(me, w.createdBy) && (
-                        <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(w)}>
-                          <Pencil className="size-3.5" aria-hidden />
-                          Edit
-                        </Button>
-                      )}
-                      {me && canDeleteOwned(me, w.createdBy) && (
-                        <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(w)}>
-                          <Trash2 className="size-3.5" aria-hidden />
-                          Delete
-                        </Button>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Paged>
           )}
 
           <WarehouseDialog

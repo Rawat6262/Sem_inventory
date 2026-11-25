@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { Modal } from "@/components/modal";
 import { Button } from "@/components/ui";
+import { Paged } from "@/components/pagination";
 import { useMe } from "@/hooks/use-me";
 import { ApiError } from "@/lib/api";
 import { canEditStock } from "@/lib/permissions";
@@ -110,42 +111,45 @@ export function WarehouseDetail() {
                     <StatTile label="Lost there" value={fmt(activity.totals.total_lost)} tone={activity.totals.total_lost ? "danger" : undefined} />
                     <StatTile label="Dead there" value={fmt(activity.totals.total_dead)} tone={activity.totals.total_dead ? "danger" : undefined} />
                   </div>
-                  <TableWrap>
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-line bg-surface-2/50">
-                        <tr>
-                          <th className={th}>Exhibition</th>
-                          <th className={th}>Product</th>
-                          <th className={`${th} text-right`}>Sent</th>
-                          <th className={`${th} text-right`}>Returned</th>
-                          <th className={`${th} text-right`}>Still out</th>
-                          <th className={`${th} text-right`}>Lost</th>
-                          <th className={`${th} text-right`}>Dead</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-line">
-                        {activity.byExhibition.flatMap((ex) =>
-                          ex.products.map((p, i) => (
-                            <tr key={`${ex.exhibition_id}-${p.product_id}`}>
-                              <td className={`${td} font-medium`}>{i === 0 ? (ex.exhibition_name ?? "Exhibition") : ""}</td>
-                              <td className={td}>{p.product_name}</td>
-                              <td className={`${td} text-right tabular-nums`}>{fmt(p.total_sent)}</td>
-                              <td className={`${td} text-right tabular-nums`}>{fmt(p.total_returned)}</td>
-                              <td className={`${td} text-right`}>
-                                <Count n={p.still_pending} tone="warn" />
-                              </td>
-                              <td className={`${td} text-right`}>
-                                <Count n={p.lost} tone="danger" />
-                              </td>
-                              <td className={`${td} text-right`}>
-                                <Count n={p.dead} tone="danger" />
-                              </td>
+                  <Paged items={activity.byExhibition.flatMap((ex) => ex.products.map((p) => ({ ex, p })))}>
+                    {(pageRows) => (
+                      <TableWrap>
+                        <table className="w-full text-sm">
+                          <thead className="border-b border-line bg-surface-2/50">
+                            <tr>
+                              <th className={th}>Exhibition</th>
+                              <th className={th}>Product</th>
+                              <th className={`${th} text-right`}>Sent</th>
+                              <th className={`${th} text-right`}>Returned</th>
+                              <th className={`${th} text-right`}>Still out</th>
+                              <th className={`${th} text-right`}>Lost</th>
+                              <th className={`${th} text-right`}>Dead</th>
                             </tr>
-                          )),
-                        )}
-                      </tbody>
-                    </table>
-                  </TableWrap>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {pageRows.map(({ ex, p }, i) => (
+                              <tr key={`${ex.exhibition_id}-${p.product_id}`}>
+                                {/* The name once for its group, and again at the top of each page. */}
+                                <td className={`${td} font-medium`}>{pageRows[i - 1]?.ex === ex ? "" : (ex.exhibition_name ?? "Exhibition")}</td>
+                                <td className={td}>{p.product_name}</td>
+                                <td className={`${td} text-right tabular-nums`}>{fmt(p.total_sent)}</td>
+                                <td className={`${td} text-right tabular-nums`}>{fmt(p.total_returned)}</td>
+                                <td className={`${td} text-right`}>
+                                  <Count n={p.still_pending} tone="warn" />
+                                </td>
+                                <td className={`${td} text-right`}>
+                                  <Count n={p.lost} tone="danger" />
+                                </td>
+                                <td className={`${td} text-right`}>
+                                  <Count n={p.dead} tone="danger" />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </TableWrap>
+                    )}
+                  </Paged>
                 </>
               )}
             </Section>
@@ -157,45 +161,46 @@ export function WarehouseDetail() {
               {s.transfers.in.length + s.transfers.out.length === 0 ? (
                 <p className="rounded-xl border border-dashed border-line bg-surface px-4 py-8 text-center text-sm text-muted">No transfers yet.</p>
               ) : (
-                <TableWrap>
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-line bg-surface-2/50">
-                      <tr>
-                        <th className={th}>Date</th>
-                        <th className={th}>Direction</th>
-                        <th className={th}>Product</th>
-                        <th className={`${th} text-right`}>Quantity</th>
-                        <th className={th}>Other warehouse</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {[
-                        ...s.transfers.in.map((x) => ({ ...x, dir: "in" as const, other: x.from_warehouse })),
-                        ...s.transfers.out.map((x) => ({ ...x, dir: "out" as const, other: x.to_warehouse })),
-                      ]
-                        .sort((a, b) => +new Date(b.date) - +new Date(a.date))
-                        .map((x, i) => (
-                          <tr key={i}>
-                            <td className={`${td} text-muted`}>{fmtDate(x.date)}</td>
-                            <td className={td}>
-                              {x.dir === "in" ? (
-                                <span className="inline-flex items-center gap-1 text-success">
-                                  <ArrowDownLeft className="size-3.5" aria-hidden /> In
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-muted">
-                                  <ArrowUpRight className="size-3.5" aria-hidden /> Out
-                                </span>
-                              )}
-                            </td>
-                            <td className={td}>{x.product_name ?? "Deleted product"}</td>
-                            <td className={`${td} text-right tabular-nums`}>{fmt(x.quantity)}</td>
-                            <td className={td}>{x.other ?? "Deleted warehouse"}</td>
+                <Paged
+                  items={[...s.transfers.in.map((x) => ({ ...x, dir: "in" as const, other: x.from_warehouse })), ...s.transfers.out.map((x) => ({ ...x, dir: "out" as const, other: x.to_warehouse }))].sort((a, b) => +new Date(b.date) - +new Date(a.date))}
+                >
+                  {(pageRows) => (
+                    <TableWrap>
+                      <table className="w-full text-sm">
+                        <thead className="border-b border-line bg-surface-2/50">
+                          <tr>
+                            <th className={th}>Date</th>
+                            <th className={th}>Direction</th>
+                            <th className={th}>Product</th>
+                            <th className={`${th} text-right`}>Quantity</th>
+                            <th className={th}>Other warehouse</th>
                           </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </TableWrap>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                          {pageRows.map((x, i) => (
+                            <tr key={i}>
+                              <td className={`${td} text-muted`}>{fmtDate(x.date)}</td>
+                              <td className={td}>
+                                {x.dir === "in" ? (
+                                  <span className="inline-flex items-center gap-1 text-success">
+                                    <ArrowDownLeft className="size-3.5" aria-hidden /> In
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-muted">
+                                    <ArrowUpRight className="size-3.5" aria-hidden /> Out
+                                  </span>
+                                )}
+                              </td>
+                              <td className={td}>{x.product_name ?? "Deleted product"}</td>
+                              <td className={`${td} text-right tabular-nums`}>{fmt(x.quantity)}</td>
+                              <td className={td}>{x.other ?? "Deleted warehouse"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </TableWrap>
+                  )}
+                </Paged>
               )}
             </Section>
 

@@ -4,6 +4,7 @@ import { ChevronRight, MapPin, Plus, Tent, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Button, todayInput } from "@/components/ui";
 import {
   EmptyState,
@@ -111,72 +112,76 @@ export function ExhibitionsView() {
               No exhibitions match this search.
             </p>
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <thead className="border-b border-line bg-surface-2/50">
-                  <tr>
-                    <th className={th}>Name</th>
-                    <th className={th}>Venue</th>
-                    <th className={th}>City</th>
-                    <th className={th}>Dates</th>
-                    {showClients && (
-                      <th className={`${th} text-right`}>{me && ownsRecordsOnly(me.role) ? "Your clients" : "Clients"}</th>
-                    )}
-                    <th className={th}>
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {list.map((e) => (
-                    <tr key={e._id} className="hover:bg-surface-2/40">
-                      <td className={td}>
-                        <Link
-                          href={`/modules/exhibitions/${e._id}`}
-                          className="font-medium hover:text-accent hover:underline"
-                        >
-                          {e.name}
-                        </Link>
-                      </td>
-                      <td className={`${td} text-muted`}>{e.venue}</td>
-                      <td className={td}>
-                        <span className="inline-flex items-center gap-1 text-muted">
-                          <MapPin className="size-3.5" aria-hidden />
-                          {e.city}
-                        </span>
-                      </td>
-                      <td className={`${td} text-muted`}>{dateRange(e)}</td>
-                      {showClients && (
-                        <td className={`${td} text-right tabular-nums`}>
-                          {fmt(e.client?.length ?? 0)}
-                        </td>
-                      )}
-                      <td className={`${td} text-right`}>
-                        <div className="flex justify-end gap-1">
-                          <Link
-                            href={`/modules/exhibitions/${e._id}`}
-                            className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
-                          >
-                            View
-                            <ChevronRight className="size-3.5" aria-hidden />
-                          </Link>
-                          {me && manage && mayDelete(me, e.createdBy) && (
-                            <Button
-                              variant="ghost"
-                              className="h-8 px-2.5 hover:text-danger"
-                              onClick={() => setDeleting(e)}
-                              aria-label={`Delete ${e.name}`}
+            <Paged items={list} resetKey={search}>
+              {(pageRows) => (
+                <TableWrap>
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2/50">
+                      <tr>
+                        <th className={th}>Name</th>
+                        <th className={th}>Venue</th>
+                        <th className={th}>City</th>
+                        <th className={th}>Dates</th>
+                        {showClients && (
+                          <th className={`${th} text-right`}>{me && ownsRecordsOnly(me.role) ? "Your clients" : "Clients"}</th>
+                        )}
+                        <th className={th}>
+                          <span className="sr-only">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {pageRows.map((e) => (
+                        <tr key={e._id} className="hover:bg-surface-2/40">
+                          <td className={td}>
+                            <Link
+                              href={`/modules/exhibitions/${e._id}`}
+                              className="font-medium hover:text-accent hover:underline"
                             >
-                              <Trash2 className="size-3.5" aria-hidden />
-                            </Button>
+                              {e.name}
+                            </Link>
+                          </td>
+                          <td className={`${td} text-muted`}>{e.venue}</td>
+                          <td className={td}>
+                            <span className="inline-flex items-center gap-1 text-muted">
+                              <MapPin className="size-3.5" aria-hidden />
+                              {e.city}
+                            </span>
+                          </td>
+                          <td className={`${td} text-muted`}>{dateRange(e)}</td>
+                          {showClients && (
+                            <td className={`${td} text-right tabular-nums`}>
+                              {fmt(e.client?.length ?? 0)}
+                            </td>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+                          <td className={`${td} text-right`}>
+                            <div className="flex justify-end gap-1">
+                              <Link
+                                href={`/modules/exhibitions/${e._id}`}
+                                className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
+                              >
+                                View
+                                <ChevronRight className="size-3.5" aria-hidden />
+                              </Link>
+                              {me && manage && mayDelete(me, e.createdBy) && (
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 px-2.5 hover:text-danger"
+                                  onClick={() => setDeleting(e)}
+                                  aria-label={`Delete ${e.name}`}
+                                >
+                                  <Trash2 className="size-3.5" aria-hidden />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              )}
+            </Paged>
           )}
 
           <ExhibitionDialog

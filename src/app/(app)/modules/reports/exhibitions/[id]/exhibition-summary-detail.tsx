@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { Paged } from "@/components/pagination";
 import { BackLink, QueryState, Section, StatTile, TableWrap, td, th } from "../../_components/reports-ui";
 import { fmtDate, fmtMoney, useExhibitionSummary, type ExhibitionMoneySection, type ExhibitionVendorSection } from "@/lib/reports";
 
@@ -58,31 +59,35 @@ export function ExhibitionSummaryDetail() {
                 {d.client.clients.length === 0 ? (
                   <p className="py-6 text-center text-sm text-muted">No clients booked for this exhibition.</p>
                 ) : (
-                  <TableWrap>
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-line bg-surface-2/50">
-                        <tr>
-                          <th className={th}>Client</th>
-                          <th className={`${th} text-right`}>Deal amount</th>
-                          <th className={`${th} text-right`}>Paid</th>
-                          <th className={`${th} text-right`}>Remaining</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-line">
-                        {d.client.clients.map((c) => (
-                          <tr key={c.client_id}>
-                            <td className={td}>
-                              {c.name}
-                              {c.company ? <span className="text-muted"> · {c.company}</span> : null}
-                            </td>
-                            <td className={`${td} text-right`}>{fmtMoney(c.total_deal_amount)}</td>
-                            <td className={`${td} text-right text-success`}>{fmtMoney(c.total_paid)}</td>
-                            <td className={`${td} text-right ${c.total_remaining > 0 ? "text-warn" : "text-muted"}`}>{fmtMoney(c.total_remaining)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </TableWrap>
+                  <Paged items={d.client.clients}>
+                    {(pageRows) => (
+                      <TableWrap>
+                        <table className="w-full text-sm">
+                          <thead className="border-b border-line bg-surface-2/50">
+                            <tr>
+                              <th className={th}>Client</th>
+                              <th className={`${th} text-right`}>Deal amount</th>
+                              <th className={`${th} text-right`}>Paid</th>
+                              <th className={`${th} text-right`}>Remaining</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {pageRows.map((c) => (
+                              <tr key={c.client_id}>
+                                <td className={td}>
+                                  {c.name}
+                                  {c.company ? <span className="text-muted"> · {c.company}</span> : null}
+                                </td>
+                                <td className={`${td} text-right`}>{fmtMoney(c.total_deal_amount)}</td>
+                                <td className={`${td} text-right text-success`}>{fmtMoney(c.total_paid)}</td>
+                                <td className={`${td} text-right ${c.total_remaining > 0 ? "text-warn" : "text-muted"}`}>{fmtMoney(c.total_remaining)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </TableWrap>
+                    )}
+                  </Paged>
                 )}
               </Section>
 
@@ -90,36 +95,38 @@ export function ExhibitionSummaryDetail() {
                 {d.warehouseProducts.byWarehouse.length === 0 ? (
                   <p className="py-6 text-center text-sm text-muted">No stock dispatched to this exhibition yet.</p>
                 ) : (
-                  <TableWrap>
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-line bg-surface-2/50">
-                        <tr>
-                          <th className={th}>Warehouse</th>
-                          <th className={th}>Product</th>
-                          <th className={`${th} text-right`}>Sent</th>
-                          <th className={`${th} text-right`}>Returned</th>
-                          <th className={`${th} text-right`}>Still out</th>
-                          <th className={`${th} text-right`}>Lost</th>
-                          <th className={`${th} text-right`}>Dead</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-line">
-                        {d.warehouseProducts.byWarehouse.flatMap((wh) =>
-                          wh.products.map((p) => (
-                            <tr key={`${wh.warehouse_id}-${p.product_id}`}>
-                              <td className={`${td} text-muted`}>{wh.warehouse_name}</td>
-                              <td className={td}>{p.product_name}</td>
-                              <td className={`${td} text-right`}>{p.total_sent}</td>
-                              <td className={`${td} text-right`}>{p.total_returned}</td>
-                              <td className={`${td} text-right`}>{p.still_pending}</td>
-                              <td className={`${td} text-right text-danger`}>{p.lost}</td>
-                              <td className={`${td} text-right text-danger`}>{p.dead}</td>
+                  <Paged items={d.warehouseProducts.byWarehouse.flatMap((wh) => wh.products.map((p) => ({ wh, p })))}>
+                    {(pageRows) => (
+                      <TableWrap>
+                        <table className="w-full text-sm">
+                          <thead className="border-b border-line bg-surface-2/50">
+                            <tr>
+                              <th className={th}>Warehouse</th>
+                              <th className={th}>Product</th>
+                              <th className={`${th} text-right`}>Sent</th>
+                              <th className={`${th} text-right`}>Returned</th>
+                              <th className={`${th} text-right`}>Still out</th>
+                              <th className={`${th} text-right`}>Lost</th>
+                              <th className={`${th} text-right`}>Dead</th>
                             </tr>
-                          )),
-                        )}
-                      </tbody>
-                    </table>
-                  </TableWrap>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {pageRows.map(({ wh, p }) => (
+                              <tr key={`${wh.warehouse_id}-${p.product_id}`}>
+                                <td className={`${td} text-muted`}>{wh.warehouse_name}</td>
+                                <td className={td}>{p.product_name}</td>
+                                <td className={`${td} text-right`}>{p.total_sent}</td>
+                                <td className={`${td} text-right`}>{p.total_returned}</td>
+                                <td className={`${td} text-right`}>{p.still_pending}</td>
+                                <td className={`${td} text-right text-danger`}>{p.lost}</td>
+                                <td className={`${td} text-right text-danger`}>{p.dead}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </TableWrap>
+                    )}
+                  </Paged>
                 )}
               </Section>
             </>
@@ -133,51 +140,59 @@ export function ExhibitionSummaryDetail() {
 function PersonTable({ section }: { section: ExhibitionMoneySection }) {
   if (section.people.length === 0) return <p className="py-6 text-center text-sm text-muted">Nothing recorded for this exhibition.</p>;
   return (
-    <TableWrap>
-      <table className="w-full text-sm">
-        <thead className="border-b border-line bg-surface-2/50">
-          <tr>
-            <th className={th}>Name</th>
-            <th className={`${th} text-right`}>Agreed</th>
-            <th className={`${th} text-right`}>Recorded</th>
-            <th className={`${th} text-right`}>Pending</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line">
-          {section.people.map((p) => (
-            <tr key={p.id}>
-              <td className={td}>{p.name || "Unknown"}</td>
-              <td className={`${td} text-right`}>{fmtMoney(p.expense_amount)}</td>
-              <td className={`${td} text-right`}>{fmtMoney(p.deal_amount)}</td>
-              <td className={`${td} text-right ${p.pending_amount < 0 ? "text-warn" : "text-muted"}`}>{fmtMoney(p.pending_amount)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </TableWrap>
+    <Paged items={section.people}>
+      {(pageRows) => (
+        <TableWrap>
+          <table className="w-full text-sm">
+            <thead className="border-b border-line bg-surface-2/50">
+              <tr>
+                <th className={th}>Name</th>
+                <th className={`${th} text-right`}>Agreed</th>
+                <th className={`${th} text-right`}>Recorded</th>
+                <th className={`${th} text-right`}>Pending</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {pageRows.map((p) => (
+                <tr key={p.id}>
+                  <td className={td}>{p.name || "Unknown"}</td>
+                  <td className={`${td} text-right`}>{fmtMoney(p.expense_amount)}</td>
+                  <td className={`${td} text-right`}>{fmtMoney(p.deal_amount)}</td>
+                  <td className={`${td} text-right ${p.pending_amount < 0 ? "text-warn" : "text-muted"}`}>{fmtMoney(p.pending_amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableWrap>
+      )}
+    </Paged>
   );
 }
 
 function VendorTable({ section }: { section: ExhibitionVendorSection }) {
   if (section.people.length === 0) return <p className="py-6 text-center text-sm text-muted">No vendor costs recorded for this exhibition.</p>;
   return (
-    <TableWrap>
-      <table className="w-full text-sm">
-        <thead className="border-b border-line bg-surface-2/50">
-          <tr>
-            <th className={th}>Name</th>
-            <th className={`${th} text-right`}>Recorded</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line">
-          {section.people.map((v) => (
-            <tr key={v.id}>
-              <td className={td}>{v.name || "Unknown"}</td>
-              <td className={`${td} text-right`}>{fmtMoney(v.total_amount)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </TableWrap>
+    <Paged items={section.people}>
+      {(pageRows) => (
+        <TableWrap>
+          <table className="w-full text-sm">
+            <thead className="border-b border-line bg-surface-2/50">
+              <tr>
+                <th className={th}>Name</th>
+                <th className={`${th} text-right`}>Recorded</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {pageRows.map((v) => (
+                <tr key={v.id}>
+                  <td className={td}>{v.name || "Unknown"}</td>
+                  <td className={`${td} text-right`}>{fmtMoney(v.total_amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TableWrap>
+      )}
+    </Paged>
   );
 }

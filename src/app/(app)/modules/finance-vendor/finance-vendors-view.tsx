@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui";
 import { Count, EmptyState, QueryState, SearchBox, TableWrap, td, th } from "@/components/data-ui";
+import { Paged } from "@/components/pagination";
 import { fmtMoney, useFinanceVendors } from "@/lib/finance-vendors";
 import { TaxableEntryDialog } from "./_components/taxable-entry-dialog";
 
@@ -41,52 +42,56 @@ export function FinanceVendorsView() {
           ) : list.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">No vendors match &ldquo;{search}&rdquo;.</p>
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <thead className="border-b border-line bg-surface-2/50">
-                  <tr>
-                    <th className={th}>Vendor</th>
-                    <th className={`${th} text-right`}>Taxable amount</th>
-                    <th className={`${th} text-right`}>GST payable</th>
-                    <th className={`${th} text-right`}>Paid</th>
-                    <th className={`${th} text-right`}>Remaining</th>
-                    <th className={th}>
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {list.map((l) => (
-                    <tr key={l._id} className="hover:bg-surface-2/40">
-                      <td className={td}>
-                        <Link href={`/modules/finance-vendor/${l.vendor?._id}`} className="font-medium hover:text-accent hover:underline">
-                          {l.vendor?.vendorName ?? "Deleted vendor"}
-                        </Link>
-                        <div className="text-xs text-muted">
-                          {fmt(l.totalTaxableEntries)} entries · {fmt(l.totalPayments)} payments
-                        </div>
-                      </td>
-                      <td className={`${td} text-right tabular-nums`}>{fmtMoney(l.taxableAmount)}</td>
-                      <td className={`${td} text-right tabular-nums`}>{fmtMoney(l.gstBalance)}</td>
-                      <td className={`${td} text-right`}>
-                        <Count n={l.paidAmount} tone="success" money />
-                      </td>
-                      <td className={`${td} text-right`}>
-                        <Count n={l.remainingBalance} tone="warn" money />
-                      </td>
-                      <td className={`${td} text-right`}>
-                        <Link
-                          href={`/modules/finance-vendor/${l.vendor?._id}`}
-                          className="inline-flex h-8 items-center rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
-                        >
-                          View
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <Paged items={list} resetKey={search}>
+              {(pageRows) => (
+                <TableWrap>
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2/50">
+                      <tr>
+                        <th className={th}>Vendor</th>
+                        <th className={`${th} text-right`}>Taxable amount</th>
+                        <th className={`${th} text-right`}>GST payable</th>
+                        <th className={`${th} text-right`}>Paid</th>
+                        <th className={`${th} text-right`}>Remaining</th>
+                        <th className={th}>
+                          <span className="sr-only">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {pageRows.map((l) => (
+                        <tr key={l._id} className="hover:bg-surface-2/40">
+                          <td className={td}>
+                            <Link href={`/modules/finance-vendor/${l.vendor?._id}`} className="font-medium hover:text-accent hover:underline">
+                              {l.vendor?.vendorName ?? "Deleted vendor"}
+                            </Link>
+                            <div className="text-xs text-muted">
+                              {fmt(l.totalTaxableEntries)} entries · {fmt(l.totalPayments)} payments
+                            </div>
+                          </td>
+                          <td className={`${td} text-right tabular-nums`}>{fmtMoney(l.taxableAmount)}</td>
+                          <td className={`${td} text-right tabular-nums`}>{fmtMoney(l.gstBalance)}</td>
+                          <td className={`${td} text-right`}>
+                            <Count n={l.paidAmount} tone="success" money />
+                          </td>
+                          <td className={`${td} text-right`}>
+                            <Count n={l.remainingBalance} tone="warn" money />
+                          </td>
+                          <td className={`${td} text-right`}>
+                            <Link
+                              href={`/modules/finance-vendor/${l.vendor?._id}`}
+                              className="inline-flex h-8 items-center rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
+                            >
+                              View
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              )}
+            </Paged>
           )}
 
           <TaxableEntryDialog open={adding} onClose={() => setAdding(false)} excludeVendorIds={alreadyLedgered} />

@@ -6,6 +6,7 @@ import { ChevronRight, Phone, Plus, Trash2, Users } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Button } from "@/components/ui";
 import { EmptyState, QueryState, SearchBox, TableWrap, td, th } from "@/components/data-ui";
 import { deletePerson, useManpowerMutation, usePersons, type Person } from "@/lib/manpower";
@@ -41,59 +42,63 @@ export function ManpowerView() {
           ) : list.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">No workers match &ldquo;{search}&rdquo;.</p>
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <thead className="border-b border-line bg-surface-2/50">
-                  <tr>
-                    <th className={th}>Name</th>
-                    <th className={th}>Phone</th>
-                    <th className={th}>
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {list.map((p) => (
-                    <tr key={p._id} className="hover:bg-surface-2/40">
-                      <td className={td}>
-                        <Link href={`/modules/manpower/${p._id}`} className="font-medium hover:text-accent hover:underline">
-                          {p.name}
-                        </Link>
-                      </td>
-                      <td className={td}>
-                        {p.phone ? (
-                          <span className="inline-flex items-center gap-1 text-muted">
-                            <Phone className="size-3.5" aria-hidden />
-                            {p.phone}
-                          </span>
-                        ) : (
-                          <span className="text-muted">—</span>
-                        )}
-                      </td>
-                      <td className={`${td} text-right`}>
-                        <div className="flex justify-end gap-1">
-                          <Link
-                            href={`/modules/manpower/${p._id}`}
-                            className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
-                          >
-                            View
-                            <ChevronRight className="size-3.5" aria-hidden />
-                          </Link>
-                          <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(p)}>
-                            Edit
-                          </Button>
-                          {me && mayDelete(me, p.createdBy) && (
-                            <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(p)} aria-label={`Delete ${p.name}`}>
-                              <Trash2 className="size-3.5" aria-hidden />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <Paged items={list} resetKey={search}>
+              {(pageRows) => (
+                <TableWrap>
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2/50">
+                      <tr>
+                        <th className={th}>Name</th>
+                        <th className={th}>Phone</th>
+                        <th className={th}>
+                          <span className="sr-only">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {pageRows.map((p) => (
+                        <tr key={p._id} className="hover:bg-surface-2/40">
+                          <td className={td}>
+                            <Link href={`/modules/manpower/${p._id}`} className="font-medium hover:text-accent hover:underline">
+                              {p.name}
+                            </Link>
+                          </td>
+                          <td className={td}>
+                            {p.phone ? (
+                              <span className="inline-flex items-center gap-1 text-muted">
+                                <Phone className="size-3.5" aria-hidden />
+                                {p.phone}
+                              </span>
+                            ) : (
+                              <span className="text-muted">—</span>
+                            )}
+                          </td>
+                          <td className={`${td} text-right`}>
+                            <div className="flex justify-end gap-1">
+                              <Link
+                                href={`/modules/manpower/${p._id}`}
+                                className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
+                              >
+                                View
+                                <ChevronRight className="size-3.5" aria-hidden />
+                              </Link>
+                              <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(p)}>
+                                Edit
+                              </Button>
+                              {me && mayDelete(me, p.createdBy) && (
+                                <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(p)} aria-label={`Delete ${p.name}`}>
+                                  <Trash2 className="size-3.5" aria-hidden />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              )}
+            </Paged>
           )}
 
           <PersonDialog open={editing !== null} person={editing === "new" ? null : editing} onClose={() => setEditing(null)} />

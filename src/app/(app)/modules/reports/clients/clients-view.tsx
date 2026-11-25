@@ -4,6 +4,7 @@ import { ChevronRight, Users } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Select } from "@/components/ui";
+import { Paged } from "@/components/pagination";
 import { DealStatusBadge } from "../../client/_components/deal-status-badge";
 import { EmptyState, QueryState, SearchBox, Section, StatTile, TableWrap, td, th } from "../_components/reports-ui";
 import { fmt, fmtDate, fmtMoney, useClientsSummary, type ClientSummaryRow } from "@/lib/reports";
@@ -72,93 +73,101 @@ export function ClientsReportView() {
           ) : list.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">No clients match these filters.</p>
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <thead className="border-b border-line bg-surface-2/50">
-                  <tr>
-                    <th className={th}>Client</th>
-                    <th className={th}>Status</th>
-                    <th className={th}>Added by</th>
-                    <th className={`${th} text-right`}>Exhibitions</th>
-                    <th className={`${th} text-right`}>Stalls</th>
-                    <th className={`${th} text-right`}>Deal amount</th>
-                    <th className={`${th} text-right`}>Paid</th>
-                    <th className={`${th} text-right`}>Remaining</th>
-                    <th className={th}>
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {list.map((c) => {
-                    const remaining = c.total_deal_amount - c.total_paid;
-                    return (
-                      <tr key={c.id} className="hover:bg-surface-2/40">
-                        <td className={td}>
-                          <Link href={`/modules/reports/clients/${c.id}`} className="font-medium hover:text-accent hover:underline">
-                            {c.company || c.name}
-                          </Link>
-                          {c.company ? <div className="text-xs text-muted">{c.name}</div> : null}
-                        </td>
-                        <td className={td}>
-                          {c.status ? <DealStatusBadge status={c.status} /> : null}
-                        </td>
-                        <td className={`${td} text-muted`}>{c.added_by ?? "—"}</td>
-                        <td className={`${td} text-right text-muted`}>{c.exhibitions_count}</td>
-                        <td className={`${td} text-right text-muted`}>{c.stalls_count}</td>
-                        <td className={`${td} text-right`}>{fmtMoney(c.total_deal_amount)}</td>
-                        <td className={`${td} text-right text-success`}>{fmtMoney(c.total_paid)}</td>
-                        <td className={`${td} text-right ${remaining > 0 ? "text-warn" : "text-muted"}`}>{fmtMoney(remaining)}</td>
-                        <td className={`${td} text-right`}>
-                          <Link
-                            href={`/modules/reports/clients/${c.id}`}
-                            className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
-                          >
-                            Report
-                            <ChevronRight className="size-3.5" aria-hidden />
-                          </Link>
-                        </td>
+            <Paged items={list} resetKey={`${search}|${status}`}>
+              {(pageRows) => (
+                <TableWrap>
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2/50">
+                      <tr>
+                        <th className={th}>Client</th>
+                        <th className={th}>Status</th>
+                        <th className={th}>Added by</th>
+                        <th className={`${th} text-right`}>Exhibitions</th>
+                        <th className={`${th} text-right`}>Stalls</th>
+                        <th className={`${th} text-right`}>Deal amount</th>
+                        <th className={`${th} text-right`}>Paid</th>
+                        <th className={`${th} text-right`}>Remaining</th>
+                        <th className={th}>
+                          <span className="sr-only">Actions</span>
+                        </th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </TableWrap>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {pageRows.map((c) => {
+                        const remaining = c.total_deal_amount - c.total_paid;
+                        return (
+                          <tr key={c.id} className="hover:bg-surface-2/40">
+                            <td className={td}>
+                              <Link href={`/modules/reports/clients/${c.id}`} className="font-medium hover:text-accent hover:underline">
+                                {c.company || c.name}
+                              </Link>
+                              {c.company ? <div className="text-xs text-muted">{c.name}</div> : null}
+                            </td>
+                            <td className={td}>
+                              {c.status ? <DealStatusBadge status={c.status} /> : null}
+                            </td>
+                            <td className={`${td} text-muted`}>{c.added_by ?? "—"}</td>
+                            <td className={`${td} text-right text-muted`}>{c.exhibitions_count}</td>
+                            <td className={`${td} text-right text-muted`}>{c.stalls_count}</td>
+                            <td className={`${td} text-right`}>{fmtMoney(c.total_deal_amount)}</td>
+                            <td className={`${td} text-right text-success`}>{fmtMoney(c.total_paid)}</td>
+                            <td className={`${td} text-right ${remaining > 0 ? "text-warn" : "text-muted"}`}>{fmtMoney(remaining)}</td>
+                            <td className={`${td} text-right`}>
+                              <Link
+                                href={`/modules/reports/clients/${c.id}`}
+                                className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
+                              >
+                                Report
+                                <ChevronRight className="size-3.5" aria-hidden />
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              )}
+            </Paged>
           )}
 
           <Section title={`Rejected leads (${fmt(rejectedLeads.length)})`} description="Why leads didn't work out, newest first. They're left out of every total above.">
             {rejectedLeads.length === 0 ? (
               <p className="text-sm text-muted">No leads have been rejected.</p>
             ) : (
-              <TableWrap>
-                <table className="w-full text-sm">
-                  <thead className="border-b border-line bg-surface-2/50">
-                    <tr>
-                      <th className={th}>Client</th>
-                      <th className={th}>Reason</th>
-                      <th className={th}>Rejected by</th>
-                      <th className={th}>Date</th>
-                      <th className={`${th} text-right`}>Deal lost</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line">
-                    {rejectedLeads.map((c) => (
-                      <tr key={c.id}>
-                        <td className={td}>
-                          <Link href={`/modules/client/${c.id}`} className="font-medium hover:text-accent hover:underline">
-                            {c.company || c.name}
-                          </Link>
-                          {c.company && <div className="text-xs text-muted">{c.name}</div>}
-                        </td>
-                        <td className={`${td} max-w-96 whitespace-normal`}>{c.reject_reason || "—"}</td>
-                        <td className={`${td} text-muted`}>{c.rejected_by ?? "—"}</td>
-                        <td className={`${td} text-muted`}>{fmtDate(c.rejected_at)}</td>
-                        <td className={`${td} text-right tabular-nums text-muted`}>{fmtMoney(c.lost_deal_value)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </TableWrap>
+              <Paged items={rejectedLeads}>
+                {(pageRows) => (
+                  <TableWrap>
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-line bg-surface-2/50">
+                        <tr>
+                          <th className={th}>Client</th>
+                          <th className={th}>Reason</th>
+                          <th className={th}>Rejected by</th>
+                          <th className={th}>Date</th>
+                          <th className={`${th} text-right`}>Deal lost</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-line">
+                        {pageRows.map((c) => (
+                          <tr key={c.id}>
+                            <td className={td}>
+                              <Link href={`/modules/client/${c.id}`} className="font-medium hover:text-accent hover:underline">
+                                {c.company || c.name}
+                              </Link>
+                              {c.company && <div className="text-xs text-muted">{c.name}</div>}
+                            </td>
+                            <td className={`${td} max-w-96 whitespace-normal`}>{c.reject_reason || "—"}</td>
+                            <td className={`${td} text-muted`}>{c.rejected_by ?? "—"}</td>
+                            <td className={`${td} text-muted`}>{fmtDate(c.rejected_at)}</td>
+                            <td className={`${td} text-right tabular-nums text-muted`}>{fmtMoney(c.lost_deal_value)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </TableWrap>
+                )}
+              </Paged>
             )}
           </Section>
         </>

@@ -4,6 +4,7 @@ import { Pencil, Plus, Receipt, SearchX, Trash2, Wallet } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Button } from "@/components/ui";
 import { BackLink, EmptyNote, EmptyState, QueryState, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
 import { useMe } from "@/hooks/use-me";
@@ -96,48 +97,52 @@ export function FinanceVendorDetail() {
               {d.taxableHistory.length === 0 ? (
                 <EmptyNote>No taxable entries yet.</EmptyNote>
               ) : (
-                <TableWrap>
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-line bg-surface-2/50">
-                      <tr>
-                        <th className={th}>Date</th>
-                        <th className={`${th} text-right`}>Taxable amount</th>
-                        <th className={`${th} text-right`}>Rate</th>
-                        <th className={`${th} text-right`}>GST</th>
-                        <th className={th}>
-                          <span className="sr-only">Actions</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {[...d.taxableHistory].reverse().map((e) => (
-                        <tr key={e._id}>
-                          <td className={`${td} text-muted`}>{fmtDate(e.date)}</td>
-                          <td className={`${td} text-right tabular-nums`}>{fmtMoney(e.taxableAmount)}</td>
-                          <td className={`${td} text-right tabular-nums`}>{e.rate}%</td>
-                          <td className={`${td} text-right tabular-nums font-medium`}>{fmtMoney(e.gst)}</td>
-                          <td className={`${td} text-right`}>
-                            <div className="flex justify-end gap-1">
-                              <Button variant="ghost" className="h-8 px-2" onClick={() => setCorrectingEntry(e)} aria-label={`Correct entry of ${fmtMoney(e.taxableAmount)}`}>
-                                <Pencil className="size-3.5" aria-hidden />
-                              </Button>
-                              {me && mayDelete(me, e.createdBy) && (
-                                <Button
-                                  variant="ghost"
-                                  className="h-8 px-2 hover:text-danger"
-                                  onClick={() => setDeletingEntry(e)}
-                                  aria-label={`Delete entry of ${fmtMoney(e.taxableAmount)}`}
-                                >
-                                  <Trash2 className="size-3.5" aria-hidden />
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </TableWrap>
+                <Paged items={[...d.taxableHistory].reverse()}>
+                  {(pageRows) => (
+                    <TableWrap>
+                      <table className="w-full text-sm">
+                        <thead className="border-b border-line bg-surface-2/50">
+                          <tr>
+                            <th className={th}>Date</th>
+                            <th className={`${th} text-right`}>Taxable amount</th>
+                            <th className={`${th} text-right`}>Rate</th>
+                            <th className={`${th} text-right`}>GST</th>
+                            <th className={th}>
+                              <span className="sr-only">Actions</span>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                          {pageRows.map((e) => (
+                            <tr key={e._id}>
+                              <td className={`${td} text-muted`}>{fmtDate(e.date)}</td>
+                              <td className={`${td} text-right tabular-nums`}>{fmtMoney(e.taxableAmount)}</td>
+                              <td className={`${td} text-right tabular-nums`}>{e.rate}%</td>
+                              <td className={`${td} text-right tabular-nums font-medium`}>{fmtMoney(e.gst)}</td>
+                              <td className={`${td} text-right`}>
+                                <div className="flex justify-end gap-1">
+                                  <Button variant="ghost" className="h-8 px-2" onClick={() => setCorrectingEntry(e)} aria-label={`Correct entry of ${fmtMoney(e.taxableAmount)}`}>
+                                    <Pencil className="size-3.5" aria-hidden />
+                                  </Button>
+                                  {me && mayDelete(me, e.createdBy) && (
+                                    <Button
+                                      variant="ghost"
+                                      className="h-8 px-2 hover:text-danger"
+                                      onClick={() => setDeletingEntry(e)}
+                                      aria-label={`Delete entry of ${fmtMoney(e.taxableAmount)}`}
+                                    >
+                                      <Trash2 className="size-3.5" aria-hidden />
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </TableWrap>
+                  )}
+                </Paged>
               )}
             </Section>
 
@@ -145,44 +150,48 @@ export function FinanceVendorDetail() {
               {d.paymentHistory.length === 0 ? (
                 <EmptyNote>No payments yet.</EmptyNote>
               ) : (
-                <TableWrap>
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-line bg-surface-2/50">
-                      <tr>
-                        <th className={th}>Date</th>
-                        <th className={`${th} text-right`}>Amount</th>
-                        <th className={th}>
-                          <span className="sr-only">Actions</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {[...d.paymentHistory].reverse().map((p) => (
-                        <tr key={p._id}>
-                          <td className={`${td} text-muted`}>{fmtDate(p.paidDate)}</td>
-                          <td className={`${td} text-right tabular-nums font-medium text-success`}>{fmtMoney(p.paidAmount)}</td>
-                          <td className={`${td} text-right`}>
-                            <div className="flex justify-end gap-1">
-                              <Button variant="ghost" className="h-8 px-2" onClick={() => setCorrecting(p)} aria-label={`Correct payment of ${fmtMoney(p.paidAmount)}`}>
-                                <Pencil className="size-3.5" aria-hidden />
-                              </Button>
-                              {me && mayDelete(me, p.createdBy) && (
-                                <Button
-                                  variant="ghost"
-                                  className="h-8 px-2 hover:text-danger"
-                                  onClick={() => setDeleting(p)}
-                                  aria-label={`Delete payment of ${fmtMoney(p.paidAmount)}`}
-                                >
-                                  <Trash2 className="size-3.5" aria-hidden />
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </TableWrap>
+                <Paged items={[...d.paymentHistory].reverse()}>
+                  {(pageRows) => (
+                    <TableWrap>
+                      <table className="w-full text-sm">
+                        <thead className="border-b border-line bg-surface-2/50">
+                          <tr>
+                            <th className={th}>Date</th>
+                            <th className={`${th} text-right`}>Amount</th>
+                            <th className={th}>
+                              <span className="sr-only">Actions</span>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                          {pageRows.map((p) => (
+                            <tr key={p._id}>
+                              <td className={`${td} text-muted`}>{fmtDate(p.paidDate)}</td>
+                              <td className={`${td} text-right tabular-nums font-medium text-success`}>{fmtMoney(p.paidAmount)}</td>
+                              <td className={`${td} text-right`}>
+                                <div className="flex justify-end gap-1">
+                                  <Button variant="ghost" className="h-8 px-2" onClick={() => setCorrecting(p)} aria-label={`Correct payment of ${fmtMoney(p.paidAmount)}`}>
+                                    <Pencil className="size-3.5" aria-hidden />
+                                  </Button>
+                                  {me && mayDelete(me, p.createdBy) && (
+                                    <Button
+                                      variant="ghost"
+                                      className="h-8 px-2 hover:text-danger"
+                                      onClick={() => setDeleting(p)}
+                                      aria-label={`Delete payment of ${fmtMoney(p.paidAmount)}`}
+                                    >
+                                      <Trash2 className="size-3.5" aria-hidden />
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </TableWrap>
+                  )}
+                </Paged>
               )}
             </Section>
 

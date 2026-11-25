@@ -4,6 +4,7 @@ import { Ban, ChevronRight, Handshake, Phone, Plus, Trash2 } from "lucide-react"
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Button, Select } from "@/components/ui";
 import { Count, EmptyState, QueryState, SearchBox, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
 import { useMe } from "@/hooks/use-me";
@@ -103,87 +104,91 @@ export function ClientsView() {
           ) : list.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">No clients match these filters.</p>
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <thead className="border-b border-line bg-surface-2/50">
-                  <tr>
-                    <th className={th}>Company</th>
-                    <th className={th}>Client</th>
-                    <th className={th}>Phone</th>
-                    <th className={th}>Status</th>
-                    {!ownOnly && <th className={th}>Added by</th>}
-                    <th className={`${th} text-right`}>Exhibitions</th>
-                    <th className={`${th} text-right`}>Deal</th>
-                    <th className={`${th} text-right`}>Paid</th>
-                    <th className={`${th} text-right`}>Remaining</th>
-                    <th className={th}>
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {list.map((c) => {
-                    const t = clientTotals(c);
-                    const rowStatus = clientStatus(c);
-                    return (
-                      <tr key={c._id} className="hover:bg-surface-2/40">
-                        <td className={td}>
-                          <Link href={`/modules/client/${c._id}`} className="font-medium hover:text-accent hover:underline">
-                            {c.companyName || c.clientName}
-                          </Link>
-                        </td>
-                        <td className={`${td} text-muted`}>{c.clientName}</td>
-                        <td className={td}>
-                          <span className="inline-flex items-center gap-1 text-muted">
-                            <Phone className="size-3.5" aria-hidden />
-                            {c.phoneNumber}
-                          </span>
-                        </td>
-                        <td className={td}>
-                          <DealStatusBadge status={rowStatus} />
-                          {c.rejected && c.reject_reason && (
-                            <div className="mt-1 max-w-48 truncate text-xs text-muted" title={`${c.reject_reason}${rejectedByName(c) ? ` (rejected by ${rejectedByName(c)})` : ""}`}>
-                              {c.reject_reason}
-                            </div>
-                          )}
-                        </td>
-                        {!ownOnly && <td className={`${td} text-muted`}>{addedByName(c) ?? "—"}</td>}
-                        <td className={`${td} text-right tabular-nums`}>{fmt(c.exhibition.length)}</td>
-                        <td className={`${td} text-right tabular-nums`}>{fmtMoney(t.deal)}</td>
-                        <td className={`${td} text-right`}>
-                          <Count n={t.paid} tone="success" money />
-                        </td>
-                        <td className={`${td} text-right`}>
-                          <Count n={t.remaining} tone="warn" money />
-                        </td>
-                        <td className={`${td} text-right`}>
-                          <div className="flex justify-end gap-1">
-                            {rowStatus === "lead" && (
-                              <Button variant="ghost" className="h-8 px-2.5 text-danger hover:bg-danger-soft" onClick={() => setRejecting(c)}>
-                                <Ban className="size-3.5" aria-hidden />
-                                Reject
-                              </Button>
-                            )}
-                            <Link
-                              href={`/modules/client/${c._id}`}
-                              className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
-                            >
-                              View
-                              <ChevronRight className="size-3.5" aria-hidden />
-                            </Link>
-                            {me && mayDelete(me, c.createdBy) && (
-                              <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(c)} aria-label={`Delete ${c.clientName}`}>
-                                <Trash2 className="size-3.5" aria-hidden />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
+            <Paged items={list} resetKey={`${search}|${status}`}>
+              {(pageRows) => (
+                <TableWrap>
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2/50">
+                      <tr>
+                        <th className={th}>Company</th>
+                        <th className={th}>Client</th>
+                        <th className={th}>Phone</th>
+                        <th className={th}>Status</th>
+                        {!ownOnly && <th className={th}>Added by</th>}
+                        <th className={`${th} text-right`}>Exhibitions</th>
+                        <th className={`${th} text-right`}>Deal</th>
+                        <th className={`${th} text-right`}>Paid</th>
+                        <th className={`${th} text-right`}>Remaining</th>
+                        <th className={th}>
+                          <span className="sr-only">Actions</span>
+                        </th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </TableWrap>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {pageRows.map((c) => {
+                        const t = clientTotals(c);
+                        const rowStatus = clientStatus(c);
+                        return (
+                          <tr key={c._id} className="hover:bg-surface-2/40">
+                            <td className={td}>
+                              <Link href={`/modules/client/${c._id}`} className="font-medium hover:text-accent hover:underline">
+                                {c.companyName || c.clientName}
+                              </Link>
+                            </td>
+                            <td className={`${td} text-muted`}>{c.clientName}</td>
+                            <td className={td}>
+                              <span className="inline-flex items-center gap-1 text-muted">
+                                <Phone className="size-3.5" aria-hidden />
+                                {c.phoneNumber}
+                              </span>
+                            </td>
+                            <td className={td}>
+                              <DealStatusBadge status={rowStatus} />
+                              {c.rejected && c.reject_reason && (
+                                <div className="mt-1 max-w-48 truncate text-xs text-muted" title={`${c.reject_reason}${rejectedByName(c) ? ` (rejected by ${rejectedByName(c)})` : ""}`}>
+                                  {c.reject_reason}
+                                </div>
+                              )}
+                            </td>
+                            {!ownOnly && <td className={`${td} text-muted`}>{addedByName(c) ?? "—"}</td>}
+                            <td className={`${td} text-right tabular-nums`}>{fmt(c.exhibition.length)}</td>
+                            <td className={`${td} text-right tabular-nums`}>{fmtMoney(t.deal)}</td>
+                            <td className={`${td} text-right`}>
+                              <Count n={t.paid} tone="success" money />
+                            </td>
+                            <td className={`${td} text-right`}>
+                              <Count n={t.remaining} tone="warn" money />
+                            </td>
+                            <td className={`${td} text-right`}>
+                              <div className="flex justify-end gap-1">
+                                {rowStatus === "lead" && (
+                                  <Button variant="ghost" className="h-8 px-2.5 text-danger hover:bg-danger-soft" onClick={() => setRejecting(c)}>
+                                    <Ban className="size-3.5" aria-hidden />
+                                    Reject
+                                  </Button>
+                                )}
+                                <Link
+                                  href={`/modules/client/${c._id}`}
+                                  className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
+                                >
+                                  View
+                                  <ChevronRight className="size-3.5" aria-hidden />
+                                </Link>
+                                {me && mayDelete(me, c.createdBy) && (
+                                  <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(c)} aria-label={`Delete ${c.clientName}`}>
+                                    <Trash2 className="size-3.5" aria-hidden />
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              )}
+            </Paged>
           )}
 
           {ownOnly && <ClientDirectory />}
@@ -246,27 +251,31 @@ function ClientDirectory() {
                 <div className="mb-3">
                   <SearchBox value={search} onChange={setSearch} placeholder="Search companies" />
                 </div>
-                <TableWrap>
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-line bg-surface-2/50">
-                      <tr>
-                        <th className={th}>Company</th>
-                        <th className={th}>Client</th>
-                        <th className={th}>Added by</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {list.map((c) => (
-                        <tr key={c._id}>
-                          <td className={`${td} font-medium`}>{c.companyName || "—"}</td>
-                          <td className={`${td} text-muted`}>{c.clientName}</td>
-                          <td className={`${td} text-muted`}>{c.addedBy ?? "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {list.length === 0 && <p className="px-4 py-8 text-center text-sm text-muted">No companies match &ldquo;{search}&rdquo;.</p>}
-                </TableWrap>
+                <Paged items={list} resetKey={search}>
+                  {(pageRows) => (
+                    <TableWrap>
+                      <table className="w-full text-sm">
+                        <thead className="border-b border-line bg-surface-2/50">
+                          <tr>
+                            <th className={th}>Company</th>
+                            <th className={th}>Client</th>
+                            <th className={th}>Added by</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                          {pageRows.map((c) => (
+                            <tr key={c._id}>
+                              <td className={`${td} font-medium`}>{c.companyName || "—"}</td>
+                              <td className={`${td} text-muted`}>{c.clientName}</td>
+                              <td className={`${td} text-muted`}>{c.addedBy ?? "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {list.length === 0 && <p className="px-4 py-8 text-center text-sm text-muted">No companies match &ldquo;{search}&rdquo;.</p>}
+                    </TableWrap>
+                  )}
+                </Paged>
               </>
             )
           }

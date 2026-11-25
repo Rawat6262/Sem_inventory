@@ -297,7 +297,7 @@ export function canEditStock(
   me: { _id: string; role: string },
   createdBy: string | { _id: string } | null | undefined,
 ): boolean {
-  if (me.role !== "employee" && me.role !== "supervisor") return true;
+  if (!["employee", "supervisor", "labour"].includes(me.role)) return true;
   return canDeleteOwned(me, createdBy);
 }
 

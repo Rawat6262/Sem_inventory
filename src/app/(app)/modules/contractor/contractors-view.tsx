@@ -6,6 +6,7 @@ import { ChevronRight, HardHat, Phone, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Button, Select } from "@/components/ui";
 import { Count, EmptyState, QueryState, SearchBox, TableWrap, td, th } from "@/components/data-ui";
 import { contractorTotals, deleteContractor, fmt, fmtMoney, useContractors, useContractorsMutation, type Contractor } from "@/lib/contractors";
@@ -90,69 +91,73 @@ export function ContractorsView() {
           ) : list.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">No contractors match these filters.</p>
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <thead className="border-b border-line bg-surface-2/50">
-                  <tr>
-                    <th className={th}>Name</th>
-                    <th className={th}>Type</th>
-                    <th className={th}>Phone</th>
-                    <th className={`${th} text-right`}>Stalls</th>
-                    <th className={`${th} text-right`}>Agreed</th>
-                    <th className={`${th} text-right`}>Paid</th>
-                    <th className={`${th} text-right`}>Remaining</th>
-                    <th className={th}>
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {list.map((c) => {
-                    const t = contractorTotals(c);
-                    return (
-                      <tr key={c._id} className="hover:bg-surface-2/40">
-                        <td className={td}>
-                          <Link href={`/modules/contractor/${c._id}`} className="font-medium hover:text-accent hover:underline">
-                            {c.name}
-                          </Link>
-                        </td>
-                        <td className={`${td} text-muted`}>{c.labour_type}</td>
-                        <td className={td}>
-                          <span className="inline-flex items-center gap-1 text-muted">
-                            <Phone className="size-3.5" aria-hidden />
-                            {c.phone_number}
-                          </span>
-                        </td>
-                        <td className={`${td} text-right tabular-nums`}>{fmt(t.stalls)}</td>
-                        <td className={`${td} text-right tabular-nums`}>{fmtMoney(t.agreement)}</td>
-                        <td className={`${td} text-right`}>
-                          <Count n={t.paid} tone="success" money />
-                        </td>
-                        <td className={`${td} text-right`}>
-                          <Count n={t.remaining} tone="warn" money />
-                        </td>
-                        <td className={`${td} text-right`}>
-                          <div className="flex justify-end gap-1">
-                            <Link
-                              href={`/modules/contractor/${c._id}`}
-                              className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
-                            >
-                              View
-                              <ChevronRight className="size-3.5" aria-hidden />
-                            </Link>
-                            {me && mayDelete(me, c.createdBy) && (
-                              <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(c)} aria-label={`Delete ${c.name}`}>
-                                <Trash2 className="size-3.5" aria-hidden />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
+            <Paged items={list} resetKey={`${search}|${typeFilter}`}>
+              {(pageRows) => (
+                <TableWrap>
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2/50">
+                      <tr>
+                        <th className={th}>Name</th>
+                        <th className={th}>Type</th>
+                        <th className={th}>Phone</th>
+                        <th className={`${th} text-right`}>Stalls</th>
+                        <th className={`${th} text-right`}>Agreed</th>
+                        <th className={`${th} text-right`}>Paid</th>
+                        <th className={`${th} text-right`}>Remaining</th>
+                        <th className={th}>
+                          <span className="sr-only">Actions</span>
+                        </th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </TableWrap>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {pageRows.map((c) => {
+                        const t = contractorTotals(c);
+                        return (
+                          <tr key={c._id} className="hover:bg-surface-2/40">
+                            <td className={td}>
+                              <Link href={`/modules/contractor/${c._id}`} className="font-medium hover:text-accent hover:underline">
+                                {c.name}
+                              </Link>
+                            </td>
+                            <td className={`${td} text-muted`}>{c.labour_type}</td>
+                            <td className={td}>
+                              <span className="inline-flex items-center gap-1 text-muted">
+                                <Phone className="size-3.5" aria-hidden />
+                                {c.phone_number}
+                              </span>
+                            </td>
+                            <td className={`${td} text-right tabular-nums`}>{fmt(t.stalls)}</td>
+                            <td className={`${td} text-right tabular-nums`}>{fmtMoney(t.agreement)}</td>
+                            <td className={`${td} text-right`}>
+                              <Count n={t.paid} tone="success" money />
+                            </td>
+                            <td className={`${td} text-right`}>
+                              <Count n={t.remaining} tone="warn" money />
+                            </td>
+                            <td className={`${td} text-right`}>
+                              <div className="flex justify-end gap-1">
+                                <Link
+                                  href={`/modules/contractor/${c._id}`}
+                                  className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
+                                >
+                                  View
+                                  <ChevronRight className="size-3.5" aria-hidden />
+                                </Link>
+                                {me && mayDelete(me, c.createdBy) && (
+                                  <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(c)} aria-label={`Delete ${c.name}`}>
+                                    <Trash2 className="size-3.5" aria-hidden />
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              )}
+            </Paged>
           )}
 
           <ContractorDialog open={editing !== null} contractor={editing === "new" ? null : editing} onClose={() => setEditing(null)} />

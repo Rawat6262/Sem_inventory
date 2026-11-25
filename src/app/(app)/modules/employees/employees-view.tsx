@@ -4,6 +4,7 @@ import { ChevronRight, Contact, Phone, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Button, Select } from "@/components/ui";
 import { EmptyState, QueryState, SearchBox, TableWrap, td, th } from "@/components/data-ui";
 import { useMe } from "@/hooks/use-me";
@@ -55,65 +56,69 @@ export function EmployeesView() {
           ) : list.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">No employees match these filters.</p>
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <thead className="border-b border-line bg-surface-2/50">
-                  <tr>
-                    <th className={th}>Name</th>
-                    <th className={th}>Company</th>
-                    <th className={th}>Phone</th>
-                    <th className={th}>Status</th>
-                    {canSeeSalary && <th className={`${th} text-right`}>Current salary</th>}
-                    <th className={th}>
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {list.map((e) => (
-                    <tr key={e._id} className="hover:bg-surface-2/40">
-                      <td className={td}>
-                        <Link href={`/modules/employees/${e._id}`} className="font-medium hover:text-accent hover:underline">
-                          {e.name}
-                        </Link>
-                      </td>
-                      <td className={`${td} text-muted`}>{e.company}</td>
-                      <td className={td}>
-                        <span className="inline-flex items-center gap-1 text-muted">
-                          <Phone className="size-3.5" aria-hidden />
-                          {e.phone}
-                        </span>
-                      </td>
-                      <td className={td}>
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${e.status === "active" ? "bg-success-soft text-success" : e.status === "terminated" ? "bg-danger-soft text-danger" : "bg-surface-2 text-muted"}`}>
-                          {e.status}
-                        </span>
-                      </td>
-                      {canSeeSalary && <td className={`${td} text-right tabular-nums`}>{e.current_salary !== undefined ? fmtMoney(e.current_salary) : <span className="text-muted">—</span>}</td>}
-                      <td className={`${td} text-right`}>
-                        <div className="flex justify-end gap-1">
-                          <Link
-                            href={`/modules/employees/${e._id}`}
-                            className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
-                          >
-                            View
-                            <ChevronRight className="size-3.5" aria-hidden />
-                          </Link>
-                          <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(e)}>
-                            Edit
-                          </Button>
-                          {me && mayDelete(me, e.createdBy) && (
-                            <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(e)} aria-label={`Delete ${e.name}`}>
-                              <Trash2 className="size-3.5" aria-hidden />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <Paged items={list} resetKey={`${search}|${status}`}>
+              {(pageRows) => (
+                <TableWrap>
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2/50">
+                      <tr>
+                        <th className={th}>Name</th>
+                        <th className={th}>Company</th>
+                        <th className={th}>Phone</th>
+                        <th className={th}>Status</th>
+                        {canSeeSalary && <th className={`${th} text-right`}>Current salary</th>}
+                        <th className={th}>
+                          <span className="sr-only">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {pageRows.map((e) => (
+                        <tr key={e._id} className="hover:bg-surface-2/40">
+                          <td className={td}>
+                            <Link href={`/modules/employees/${e._id}`} className="font-medium hover:text-accent hover:underline">
+                              {e.name}
+                            </Link>
+                          </td>
+                          <td className={`${td} text-muted`}>{e.company}</td>
+                          <td className={td}>
+                            <span className="inline-flex items-center gap-1 text-muted">
+                              <Phone className="size-3.5" aria-hidden />
+                              {e.phone}
+                            </span>
+                          </td>
+                          <td className={td}>
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${e.status === "active" ? "bg-success-soft text-success" : e.status === "terminated" ? "bg-danger-soft text-danger" : "bg-surface-2 text-muted"}`}>
+                              {e.status}
+                            </span>
+                          </td>
+                          {canSeeSalary && <td className={`${td} text-right tabular-nums`}>{e.current_salary !== undefined ? fmtMoney(e.current_salary) : <span className="text-muted">—</span>}</td>}
+                          <td className={`${td} text-right`}>
+                            <div className="flex justify-end gap-1">
+                              <Link
+                                href={`/modules/employees/${e._id}`}
+                                className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
+                              >
+                                View
+                                <ChevronRight className="size-3.5" aria-hidden />
+                              </Link>
+                              <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(e)}>
+                                Edit
+                              </Button>
+                              {me && mayDelete(me, e.createdBy) && (
+                                <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(e)} aria-label={`Delete ${e.name}`}>
+                                  <Trash2 className="size-3.5" aria-hidden />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              )}
+            </Paged>
           )}
 
           <EmployeeDialog open={editing !== null} employee={editing === "new" ? null : editing} onClose={() => setEditing(null)} />

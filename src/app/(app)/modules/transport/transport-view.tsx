@@ -6,6 +6,7 @@ import { ChevronRight, MapPin, Phone, Plus, Trash2, Truck } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Button } from "@/components/ui";
 import { Count, EmptyState, QueryState, SearchBox, TableWrap, td, th } from "@/components/data-ui";
 import { deleteTransporter, useTransportMutation, useTransporters, type Transporter } from "@/lib/transport";
@@ -47,68 +48,72 @@ export function TransportView() {
           ) : list.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted">No transporters match &ldquo;{search}&rdquo;.</p>
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <thead className="border-b border-line bg-surface-2/50">
-                  <tr>
-                    <th className={th}>Name</th>
-                    <th className={th}>Location</th>
-                    <th className={th}>Phone</th>
-                    <th className={`${th} text-right`}>Exhibitions</th>
-                    <th className={`${th} text-right`}>Paid</th>
-                    <th className={th}>
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {list.map((t) => (
-                    <tr key={t._id} className="hover:bg-surface-2/40">
-                      <td className={td}>
-                        <Link href={`/modules/transport/${t._id}`} className="font-medium hover:text-accent hover:underline">
-                          {t.transporter_name}
-                        </Link>
-                      </td>
-                      <td className={td}>
-                        <span className="inline-flex items-center gap-1 text-muted">
-                          <MapPin className="size-3.5" aria-hidden />
-                          {[t.city, t.state].filter(Boolean).join(", ") || "—"}
-                        </span>
-                      </td>
-                      <td className={td}>
-                        <span className="inline-flex items-center gap-1 text-muted">
-                          <Phone className="size-3.5" aria-hidden />
-                          {t.phone_number}
-                        </span>
-                      </td>
-                      <td className={`${td} text-right tabular-nums`}>{t.exhibition?.length ?? 0}</td>
-                      <td className={`${td} text-right`}>
-                        <Count n={t.overall_paid ?? 0} tone="success" money />
-                      </td>
-                      <td className={`${td} text-right`}>
-                        <div className="flex justify-end gap-1">
-                          <Link
-                            href={`/modules/transport/${t._id}`}
-                            className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
-                          >
-                            View
-                            <ChevronRight className="size-3.5" aria-hidden />
-                          </Link>
-                          <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(t)}>
-                            Edit
-                          </Button>
-                          {me && mayDelete(me, t.createdBy) && (
-                            <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(t)} aria-label={`Delete ${t.transporter_name}`}>
-                              <Trash2 className="size-3.5" aria-hidden />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <Paged items={list} resetKey={search}>
+              {(pageRows) => (
+                <TableWrap>
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2/50">
+                      <tr>
+                        <th className={th}>Name</th>
+                        <th className={th}>Location</th>
+                        <th className={th}>Phone</th>
+                        <th className={`${th} text-right`}>Exhibitions</th>
+                        <th className={`${th} text-right`}>Paid</th>
+                        <th className={th}>
+                          <span className="sr-only">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {pageRows.map((t) => (
+                        <tr key={t._id} className="hover:bg-surface-2/40">
+                          <td className={td}>
+                            <Link href={`/modules/transport/${t._id}`} className="font-medium hover:text-accent hover:underline">
+                              {t.transporter_name}
+                            </Link>
+                          </td>
+                          <td className={td}>
+                            <span className="inline-flex items-center gap-1 text-muted">
+                              <MapPin className="size-3.5" aria-hidden />
+                              {[t.city, t.state].filter(Boolean).join(", ") || "—"}
+                            </span>
+                          </td>
+                          <td className={td}>
+                            <span className="inline-flex items-center gap-1 text-muted">
+                              <Phone className="size-3.5" aria-hidden />
+                              {t.phone_number}
+                            </span>
+                          </td>
+                          <td className={`${td} text-right tabular-nums`}>{t.exhibition?.length ?? 0}</td>
+                          <td className={`${td} text-right`}>
+                            <Count n={t.overall_paid ?? 0} tone="success" money />
+                          </td>
+                          <td className={`${td} text-right`}>
+                            <div className="flex justify-end gap-1">
+                              <Link
+                                href={`/modules/transport/${t._id}`}
+                                className="inline-flex h-8 items-center gap-0.5 rounded-md px-2.5 text-sm font-medium text-muted hover:bg-surface-2 hover:text-ink"
+                              >
+                                View
+                                <ChevronRight className="size-3.5" aria-hidden />
+                              </Link>
+                              <Button variant="ghost" className="h-8 px-2.5" onClick={() => setEditing(t)}>
+                                Edit
+                              </Button>
+                              {me && mayDelete(me, t.createdBy) && (
+                                <Button variant="ghost" className="h-8 px-2.5 hover:text-danger" onClick={() => setDeleting(t)} aria-label={`Delete ${t.transporter_name}`}>
+                                  <Trash2 className="size-3.5" aria-hidden />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              )}
+            </Paged>
           )}
 
           <TransporterDialog open={editing !== null} transporter={editing === "new" ? null : editing} onClose={() => setEditing(null)} />

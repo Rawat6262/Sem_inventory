@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, History } from "lucide-react";
+import { History } from "lucide-react";
 import { useState } from "react";
 import { Modal } from "@/components/modal";
+import { Pagination } from "@/components/pagination";
 import { Button, Field, Input, Select, cn } from "@/components/ui";
 import { EmptyState, QueryState, TableWrap, td, th } from "@/components/data-ui";
 import { ACTIONS, fmtDateTime, MODULES, useActivityLog, type ActivityAction, type ActivityLog } from "@/lib/activity";
@@ -172,27 +173,8 @@ export function ActivityView() {
                   </table>
                 </TableWrap>
 
-                <div className="mt-3 flex items-center justify-between text-sm text-muted">
-                  <span>
-                    Page {d.pagination.page} of {d.pagination.totalPages || 1} · {d.pagination.total} total
-                  </span>
-                  <div className="flex gap-1">
-                    <Button type="button" variant="secondary" className="h-8 px-2.5" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                      <ChevronLeft className="size-3.5" aria-hidden />
-                      Prev
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="h-8 px-2.5"
-                      disabled={page >= d.pagination.totalPages}
-                      onClick={() => setPage((p) => p + 1)}
-                    >
-                      Next
-                      <ChevronRight className="size-3.5" aria-hidden />
-                    </Button>
-                  </div>
-                </div>
+                <Pagination page={d.pagination.page} total={d.pagination.totalPages} onPage={setPage} />
+                <p className="mt-2 text-center text-xs text-muted">{d.pagination.total} entries</p>
               </>
             )}
 

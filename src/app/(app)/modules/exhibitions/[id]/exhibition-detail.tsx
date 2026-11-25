@@ -16,6 +16,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Button } from "@/components/ui";
 import {
   BackLink,
@@ -207,62 +208,66 @@ export function ExhibitionDetail() {
                       Book a client for this exhibition from the Clients module.
                     </EmptyState>
                   ) : (
-                    <TableWrap>
-                      <table className="w-full text-sm">
-                        <thead className="border-b border-line bg-surface-2/50">
-                          <tr>
-                            <th className={th}>Client</th>
-                            <th className={th}>Phone</th>
-                            <th className={`${th} text-right`}>Stalls</th>
-                            <th className={`${th} text-right`}>Deal</th>
-                            <th className={`${th} text-right`}>Paid</th>
-                            <th className={`${th} text-right`}>Remaining</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-line">
-                          {rows.map((r) => (
-                            <tr
-                              key={r.clientId}
-                              className="hover:bg-surface-2/40"
-                            >
-                              <td className={td}>
-                                {/* Company first, the contact person under it. */}
-                                <Link
-                                  href={`/modules/client/${r.clientId}`}
-                                  className="font-medium hover:text-accent hover:underline"
+                    <Paged items={rows}>
+                      {(pageRows) => (
+                        <TableWrap>
+                          <table className="w-full text-sm">
+                            <thead className="border-b border-line bg-surface-2/50">
+                              <tr>
+                                <th className={th}>Client</th>
+                                <th className={th}>Phone</th>
+                                <th className={`${th} text-right`}>Stalls</th>
+                                <th className={`${th} text-right`}>Deal</th>
+                                <th className={`${th} text-right`}>Paid</th>
+                                <th className={`${th} text-right`}>Remaining</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-line">
+                              {pageRows.map((r) => (
+                                <tr
+                                  key={r.clientId}
+                                  className="hover:bg-surface-2/40"
                                 >
-                                  {r.companyName || r.clientName}
-                                </Link>
-                                {r.companyName && (
-                                  <div className="text-xs text-muted">
-                                    {r.clientName}
-                                  </div>
-                                )}
-                              </td>
-                              <td className={`${td} text-muted`}>
-                                {r.phoneNumber}
-                              </td>
-                              <td className={`${td} text-right tabular-nums`}>
-                                {fmt(r.stalls.length)}
-                              </td>
-                              <td className={`${td} text-right tabular-nums`}>
-                                {fmtMoney(r.totals.total_deal_amount)}
-                              </td>
-                              <td
-                                className={`${td} text-right tabular-nums text-success`}
-                              >
-                                {fmtMoney(r.totals.total_paid)}
-                              </td>
-                              <td
-                                className={`${td} text-right tabular-nums ${r.totals.total_remaining > 0 ? "text-warn" : ""}`}
-                              >
-                                {fmtMoney(r.totals.total_remaining)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </TableWrap>
+                                  <td className={td}>
+                                    {/* Company first, the contact person under it. */}
+                                    <Link
+                                      href={`/modules/client/${r.clientId}`}
+                                      className="font-medium hover:text-accent hover:underline"
+                                    >
+                                      {r.companyName || r.clientName}
+                                    </Link>
+                                    {r.companyName && (
+                                      <div className="text-xs text-muted">
+                                        {r.clientName}
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className={`${td} text-muted`}>
+                                    {r.phoneNumber}
+                                  </td>
+                                  <td className={`${td} text-right tabular-nums`}>
+                                    {fmt(r.stalls.length)}
+                                  </td>
+                                  <td className={`${td} text-right tabular-nums`}>
+                                    {fmtMoney(r.totals.total_deal_amount)}
+                                  </td>
+                                  <td
+                                    className={`${td} text-right tabular-nums text-success`}
+                                  >
+                                    {fmtMoney(r.totals.total_paid)}
+                                  </td>
+                                  <td
+                                    className={`${td} text-right tabular-nums ${r.totals.total_remaining > 0 ? "text-warn" : ""}`}
+                                  >
+                                    {fmtMoney(r.totals.total_remaining)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </TableWrap>
+                      )}
+                    </Paged>
                   )}
                 </Section>
               </>

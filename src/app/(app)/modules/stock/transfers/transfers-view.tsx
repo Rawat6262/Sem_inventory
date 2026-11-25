@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Select } from "@/components/ui";
+import { Paged } from "@/components/pagination";
 import { fmt, fmtDate, useTransfers, useWarehouses, warehouseLabel } from "@/lib/stock";
 import { QueryState, SearchBox, Section, TableWrap, td, th } from "../_components/stock-ui";
 import { TransferForm } from "../_components/transfer-form";
@@ -50,43 +51,47 @@ export function TransfersView() {
                 ))}
               </Select>
             </div>
-            <TableWrap>
-              <table className="w-full text-sm">
-                <thead className="border-b border-line bg-surface-2/50">
-                  <tr>
-                    <th className={th}>Date</th>
-                    <th className={th}>Product</th>
-                    <th className={`${th} text-right`}>Quantity</th>
-                    <th className={th}>From → To</th>
-                    <th className={th}>By</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {rows.map((t) => (
-                    <tr key={t._id}>
-                      <td className={`${td} text-muted`}>{fmtDate(t.createdAt)}</td>
-                      <td className={`${td} font-medium`}>{t.product?.name ?? <span className="font-normal text-muted">Deleted product</span>}</td>
-                      <td className={`${td} text-right tabular-nums`}>
-                        {fmt(t.quantity)} {t.product?.unit && <span className="text-muted">{t.product.unit}</span>}
-                      </td>
-                      <td className={td}>
-                        <span className="inline-flex items-center gap-1.5">
-                          {t.fromWarehouse ? warehouseLabel(t.fromWarehouse) : "Deleted"}
-                          <ArrowRight className="size-3.5 text-muted" aria-hidden />
-                          {t.toWarehouse ? warehouseLabel(t.toWarehouse) : "Deleted"}
-                        </span>
-                      </td>
-                      <td className={`${td} text-muted`}>{t.transferredBy?.full_name ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {rows.length === 0 && (
-                <p className="px-4 py-10 text-center text-sm text-muted">
-                  {transfers.data?.length ? "No transfers match these filters." : "No transfers yet."}
-                </p>
+            <Paged items={rows} resetKey={`${search}|${warehouse}`}>
+              {(pageRows) => (
+                <TableWrap>
+                  <table className="w-full text-sm">
+                    <thead className="border-b border-line bg-surface-2/50">
+                      <tr>
+                        <th className={th}>Date</th>
+                        <th className={th}>Product</th>
+                        <th className={`${th} text-right`}>Quantity</th>
+                        <th className={th}>From → To</th>
+                        <th className={th}>By</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {pageRows.map((t) => (
+                        <tr key={t._id}>
+                          <td className={`${td} text-muted`}>{fmtDate(t.createdAt)}</td>
+                          <td className={`${td} font-medium`}>{t.product?.name ?? <span className="font-normal text-muted">Deleted product</span>}</td>
+                          <td className={`${td} text-right tabular-nums`}>
+                            {fmt(t.quantity)} {t.product?.unit && <span className="text-muted">{t.product.unit}</span>}
+                          </td>
+                          <td className={td}>
+                            <span className="inline-flex items-center gap-1.5">
+                              {t.fromWarehouse ? warehouseLabel(t.fromWarehouse) : "Deleted"}
+                              <ArrowRight className="size-3.5 text-muted" aria-hidden />
+                              {t.toWarehouse ? warehouseLabel(t.toWarehouse) : "Deleted"}
+                            </span>
+                          </td>
+                          <td className={`${td} text-muted`}>{t.transferredBy?.full_name ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {rows.length === 0 && (
+                    <p className="px-4 py-10 text-center text-sm text-muted">
+                      {transfers.data?.length ? "No transfers match these filters." : "No transfers yet."}
+                    </p>
+                  )}
+                </TableWrap>
               )}
-            </TableWrap>
+            </Paged>
           </Section>
         </>
       )}

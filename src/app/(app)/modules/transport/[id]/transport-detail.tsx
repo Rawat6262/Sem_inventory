@@ -6,6 +6,7 @@ import { CalendarDays, MapPin, Pencil, Phone, Plus, Receipt, SearchX, Trash2, Wa
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Button } from "@/components/ui";
 import { BackLink, EmptyNote, EmptyState, QueryState, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
 import { ApiError } from "@/lib/api";
@@ -148,30 +149,34 @@ export function TransportDetail() {
 
             {t.transactions && t.transactions.length > 0 && (
               <Section title="Recent payments">
-                <TableWrap>
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-line bg-surface-2/50">
-                      <tr>
-                        <th className={th}>Date</th>
-                        <th className={th}>Exhibition</th>
-                        <th className={th}>Vehicle</th>
-                        <th className={th}>Remark</th>
-                        <th className={`${th} text-right`}>Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {t.transactions.map((txn) => (
-                        <tr key={txn._id}>
-                          <td className={`${td} text-muted`}>{fmtDate(txn.transaction_date)}</td>
-                          <td className={td}>{txn.exhibition_name ?? "—"}</td>
-                          <td className={`${td} text-muted`}>{txn.vehicle_number ?? "—"}</td>
-                          <td className={`${td} text-muted`}>{txn.remark}</td>
-                          <td className={`${td} text-right tabular-nums`}>{fmtMoney(txn.total_amount)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </TableWrap>
+                <Paged items={t.transactions}>
+                  {(pageRows) => (
+                    <TableWrap>
+                      <table className="w-full text-sm">
+                        <thead className="border-b border-line bg-surface-2/50">
+                          <tr>
+                            <th className={th}>Date</th>
+                            <th className={th}>Exhibition</th>
+                            <th className={th}>Vehicle</th>
+                            <th className={th}>Remark</th>
+                            <th className={`${th} text-right`}>Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                          {pageRows.map((txn) => (
+                            <tr key={txn._id}>
+                              <td className={`${td} text-muted`}>{fmtDate(txn.transaction_date)}</td>
+                              <td className={td}>{txn.exhibition_name ?? "—"}</td>
+                              <td className={`${td} text-muted`}>{txn.vehicle_number ?? "—"}</td>
+                              <td className={`${td} text-muted`}>{txn.remark}</td>
+                              <td className={`${td} text-right tabular-nums`}>{fmtMoney(txn.total_amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </TableWrap>
+                  )}
+                </Paged>
               </Section>
             )}
 

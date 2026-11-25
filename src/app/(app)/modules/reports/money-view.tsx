@@ -4,6 +4,7 @@ import { ArrowDownRight, ArrowUpRight, CalendarRange } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { Select, cn } from "@/components/ui";
+import { Paged } from "@/components/pagination";
 import { EmptyState, QueryState, Section, TableWrap, td, th } from "./_components/reports-ui";
 import { MoneyChart } from "./_components/money-chart";
 import { fmt, fmtDate, fmtMoney, MONTH_NAMES, useProjectMonthDetail, useProjectTimeline, type MonthRow } from "@/lib/reports";
@@ -377,33 +378,37 @@ function MonthReport({ year, month, cur, prev, prevLabel }: { year: number; mont
               {payments.length === 0 ? (
                 <p className="text-sm text-muted">No client payments this month.</p>
               ) : (
-                <TableWrap>
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-line bg-surface-2/50">
-                      <tr>
-                        <th className={th}>Date</th>
-                        <th className={th}>Client</th>
-                        <th className={th}>Exhibition</th>
-                        <th className={th}>Type</th>
-                        <th className={`${th} text-right`}>Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {payments.map((p, i) => (
-                        <tr key={i}>
-                          <td className={`${td} text-muted`}>{fmtDate(p.date)}</td>
-                          <td className={td}>
-                            {p.company_name || p.client_name}
-                            {p.company_name && <div className="text-xs text-muted">{p.client_name}</div>}
-                          </td>
-                          <td className={`${td} text-muted`}>{p.exhibition_name}</td>
-                          <td className={`${td} text-muted`}>{p.amount < 0 ? "Correction" : p.field === "advance_payment" ? "Advance" : "Payment"}</td>
-                          <td className={`${td} text-right tabular-nums font-medium`}>{fmtMoney(p.amount)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </TableWrap>
+                <Paged items={payments} resetKey={`${year}-${month}`}>
+                  {(pageRows) => (
+                    <TableWrap>
+                      <table className="w-full text-sm">
+                        <thead className="border-b border-line bg-surface-2/50">
+                          <tr>
+                            <th className={th}>Date</th>
+                            <th className={th}>Client</th>
+                            <th className={th}>Exhibition</th>
+                            <th className={th}>Type</th>
+                            <th className={`${th} text-right`}>Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                          {pageRows.map((p, i) => (
+                            <tr key={i}>
+                              <td className={`${td} text-muted`}>{fmtDate(p.date)}</td>
+                              <td className={td}>
+                                {p.company_name || p.client_name}
+                                {p.company_name && <div className="text-xs text-muted">{p.client_name}</div>}
+                              </td>
+                              <td className={`${td} text-muted`}>{p.exhibition_name}</td>
+                              <td className={`${td} text-muted`}>{p.amount < 0 ? "Correction" : p.field === "advance_payment" ? "Advance" : "Payment"}</td>
+                              <td className={`${td} text-right tabular-nums font-medium`}>{fmtMoney(p.amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </TableWrap>
+                  )}
+                </Paged>
               )}
             </Section>
 
@@ -419,31 +424,35 @@ function MonthReport({ year, month, cur, prev, prevLabel }: { year: number; mont
                       </span>
                     ))}
                   </div>
-                  <TableWrap>
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-line bg-surface-2/50">
-                        <tr>
-                          <th className={th}>Paid to</th>
-                          <th className={th}>Type</th>
-                          <th className={th}>For</th>
-                          <th className={`${th} text-right`}>Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-line">
-                        {payees.map((p) => (
-                          <tr key={`${p.type}-${p.id}`}>
-                            <td className={`${td} font-medium`}>{p.name}</td>
-                            <td className={`${td} text-muted`}>{p.type}</td>
-                            <td className={`${td} max-w-72 truncate text-muted`} title={[...p.exhibitions, ...p.purposes.map((x) => x.purpose)].join(", ")}>
-                              {p.exhibitions.join(", ") || "—"}
-                              {p.purposes.length > 0 && <span className="text-xs"> · {p.purposes.map((x) => x.purpose).join(", ")}</span>}
-                            </td>
-                            <td className={`${td} text-right tabular-nums font-medium`}>{fmtMoney(p.paid)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </TableWrap>
+                  <Paged items={payees} resetKey={`${year}-${month}`}>
+                    {(pageRows) => (
+                      <TableWrap>
+                        <table className="w-full text-sm">
+                          <thead className="border-b border-line bg-surface-2/50">
+                            <tr>
+                              <th className={th}>Paid to</th>
+                              <th className={th}>Type</th>
+                              <th className={th}>For</th>
+                              <th className={`${th} text-right`}>Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {pageRows.map((p) => (
+                              <tr key={`${p.type}-${p.id}`}>
+                                <td className={`${td} font-medium`}>{p.name}</td>
+                                <td className={`${td} text-muted`}>{p.type}</td>
+                                <td className={`${td} max-w-72 truncate text-muted`} title={[...p.exhibitions, ...p.purposes.map((x) => x.purpose)].join(", ")}>
+                                  {p.exhibitions.join(", ") || "—"}
+                                  {p.purposes.length > 0 && <span className="text-xs"> · {p.purposes.map((x) => x.purpose).join(", ")}</span>}
+                                </td>
+                                <td className={`${td} text-right tabular-nums font-medium`}>{fmtMoney(p.paid)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </TableWrap>
+                    )}
+                  </Paged>
                 </>
               )}
             </Section>
@@ -455,40 +464,44 @@ function MonthReport({ year, month, cur, prev, prevLabel }: { year: number; mont
               {!purchases || purchases.purchases.length === 0 ? (
                 <p className="text-sm text-muted">No purchases this month.</p>
               ) : (
-                <TableWrap>
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-line bg-surface-2/50">
-                      <tr>
-                        <th className={th}>Purchase</th>
-                        <th className={th}>Date</th>
-                        <th className={th}>Vendor</th>
-                        <th className={th}>Bought by</th>
-                        <th className={th}>Into</th>
-                        <th className={`${th} text-right`}>Units</th>
-                        <th className={`${th} text-right`}>Amount</th>
-                        <th className={th}>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {purchases.purchases.map((p) => (
-                        <tr key={p.id}>
-                          <td className={td}>
-                            <Link href={`/modules/purchase/${p.id}`} className="font-medium hover:text-accent hover:underline">
-                              {p.purchase_number}
-                            </Link>
-                          </td>
-                          <td className={`${td} text-muted`}>{fmtDate(p.date)}</td>
-                          <td className={td}>{p.vendor_name}</td>
-                          <td className={`${td} text-muted`}>{p.purchased_by}</td>
-                          <td className={`${td} text-muted`}>{p.warehouse_name}</td>
-                          <td className={`${td} text-right tabular-nums`}>{fmt(p.units)}</td>
-                          <td className={`${td} text-right tabular-nums font-medium`}>{fmtMoney(p.total_amount)}</td>
-                          <td className={td}>{p.status === "received" ? <span className="text-xs font-medium text-success">Received</span> : <span className="text-xs font-medium text-warn">Waiting</span>}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </TableWrap>
+                <Paged items={purchases.purchases} resetKey={`${year}-${month}`}>
+                  {(pageRows) => (
+                    <TableWrap>
+                      <table className="w-full text-sm">
+                        <thead className="border-b border-line bg-surface-2/50">
+                          <tr>
+                            <th className={th}>Purchase</th>
+                            <th className={th}>Date</th>
+                            <th className={th}>Vendor</th>
+                            <th className={th}>Bought by</th>
+                            <th className={th}>Into</th>
+                            <th className={`${th} text-right`}>Units</th>
+                            <th className={`${th} text-right`}>Amount</th>
+                            <th className={th}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                          {pageRows.map((p) => (
+                            <tr key={p.id}>
+                              <td className={td}>
+                                <Link href={`/modules/purchase/${p.id}`} className="font-medium hover:text-accent hover:underline">
+                                  {p.purchase_number}
+                                </Link>
+                              </td>
+                              <td className={`${td} text-muted`}>{fmtDate(p.date)}</td>
+                              <td className={td}>{p.vendor_name}</td>
+                              <td className={`${td} text-muted`}>{p.purchased_by}</td>
+                              <td className={`${td} text-muted`}>{p.warehouse_name}</td>
+                              <td className={`${td} text-right tabular-nums`}>{fmt(p.units)}</td>
+                              <td className={`${td} text-right tabular-nums font-medium`}>{fmtMoney(p.total_amount)}</td>
+                              <td className={td}>{p.status === "received" ? <span className="text-xs font-medium text-success">Received</span> : <span className="text-xs font-medium text-warn">Waiting</span>}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </TableWrap>
+                  )}
+                </Paged>
               )}
             </Section>
 
@@ -499,17 +512,21 @@ function MonthReport({ year, month, cur, prev, prevLabel }: { year: number; mont
                   {d.new_clients.clients.length === 0 ? (
                     <p className="mt-1 text-sm text-muted">None this month.</p>
                   ) : (
-                    <ul className="mt-2 divide-y divide-line text-sm">
-                      {d.new_clients.clients.map((c) => (
-                        <li key={c.id} className="flex items-center justify-between gap-2 py-1.5">
-                          <Link href={`/modules/client/${c.id}`} className="truncate hover:text-accent hover:underline">
-                            {c.company || c.name}
-                            {c.company && <span className="text-muted"> · {c.name}</span>}
-                          </Link>
-                          <span className="shrink-0 text-xs text-muted">{c.phone}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <Paged items={d.new_clients.clients} resetKey={`${year}-${month}`} size={10}>
+                      {(pageRows) => (
+                        <ul className="mt-2 divide-y divide-line text-sm">
+                          {pageRows.map((c) => (
+                            <li key={c.id} className="flex items-center justify-between gap-2 py-1.5">
+                              <Link href={`/modules/client/${c.id}`} className="truncate hover:text-accent hover:underline">
+                                {c.company || c.name}
+                                {c.company && <span className="text-muted"> · {c.name}</span>}
+                              </Link>
+                              <span className="shrink-0 text-xs text-muted">{c.phone}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </Paged>
                   )}
                 </div>
                 <div className="rounded-xl border border-line bg-surface p-3">
@@ -519,21 +536,25 @@ function MonthReport({ year, month, cur, prev, prevLabel }: { year: number; mont
                   {!rejected || rejected.leads.length === 0 ? (
                     <p className="mt-1 text-sm text-muted">None this month.</p>
                   ) : (
-                    <ul className="mt-2 divide-y divide-line text-sm">
-                      {rejected.leads.map((l) => (
-                        <li key={l.id} className="py-1.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <Link href={`/modules/client/${l.id}`} className="truncate font-medium hover:text-accent hover:underline">
-                              {l.company || l.name}
-                            </Link>
-                            <span className="shrink-0 text-xs tabular-nums text-muted">{fmtMoney(l.lost_deal_value)}</span>
-                          </div>
-                          <p className="text-xs text-muted">
-                            “{l.reason}” — {l.rejected_by ?? "someone"}, {fmtDate(l.rejected_at)}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
+                    <Paged items={rejected.leads} resetKey={`${year}-${month}`} size={10}>
+                      {(pageRows) => (
+                        <ul className="mt-2 divide-y divide-line text-sm">
+                          {pageRows.map((l) => (
+                            <li key={l.id} className="py-1.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <Link href={`/modules/client/${l.id}`} className="truncate font-medium hover:text-accent hover:underline">
+                                  {l.company || l.name}
+                                </Link>
+                                <span className="shrink-0 text-xs tabular-nums text-muted">{fmtMoney(l.lost_deal_value)}</span>
+                              </div>
+                              <p className="text-xs text-muted">
+                                “{l.reason}” — {l.rejected_by ?? "someone"}, {fmtDate(l.rejected_at)}
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </Paged>
                   )}
                 </div>
               </div>
@@ -562,19 +583,23 @@ function MonthReport({ year, month, cur, prev, prevLabel }: { year: number; mont
               {d.exhibitions.active.length === 0 ? (
                 <p className="text-sm text-muted">No exhibitions this month.</p>
               ) : (
-                <ul className="divide-y divide-line rounded-xl border border-line bg-surface text-sm">
-                  {d.exhibitions.active.map((e) => (
-                    <li key={e._id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
-                      <Link href={`/modules/reports/exhibitions/${e._id}`} className="font-medium hover:text-accent hover:underline">
-                        {e.name}
-                      </Link>
-                      <span className="text-xs text-muted">
-                        {fmtDate(e.startDate)} – {fmtDate(e.endDate)}
-                        {e.venue ? ` · ${e.venue}` : ""}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <Paged items={d.exhibitions.active} resetKey={`${year}-${month}`} size={10}>
+                  {(pageRows) => (
+                    <ul className="divide-y divide-line rounded-xl border border-line bg-surface text-sm">
+                      {pageRows.map((e) => (
+                        <li key={e._id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
+                          <Link href={`/modules/reports/exhibitions/${e._id}`} className="font-medium hover:text-accent hover:underline">
+                            {e.name}
+                          </Link>
+                          <span className="text-xs text-muted">
+                            {fmtDate(e.startDate)} – {fmtDate(e.endDate)}
+                            {e.venue ? ` · ${e.venue}` : ""}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Paged>
               )}
             </Section>
           </>

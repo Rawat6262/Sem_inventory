@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Select } from "@/components/ui";
+import { Paged } from "@/components/pagination";
 import {
   available,
   categoryName,
@@ -114,87 +115,91 @@ export function ProductTable({ products, categories, warehouses, singleWarehouse
         </Select>
       </div>
 
-      <TableWrap>
-        <table className="w-full text-sm">
-          <thead className="border-b border-line bg-surface-2/50">
-            <tr>
-              <th className={th}>Product</th>
-              <th className={th}>Category</th>
-              {!singleWarehouse && <th className={th}>Warehouse</th>}
-              <th className={`${th} text-right`}>Total</th>
-              <th className={`${th} text-right`}>On shelf</th>
-              <th className={`${th} text-right`}>Out</th>
-              <th className={`${th} text-right`}>Repair</th>
-              <th className={`${th} text-right`}>Lost</th>
-              <th className={`${th} text-right`}>Dead</th>
-              <th className={th}>
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {rows.map((p) => {
-              const w = p.warehouse ? byId.get(p.warehouse) : undefined;
-              return (
-                <tr key={p._id} className="hover:bg-surface-2/40">
-                  <td className={td}>
-                    <button type="button" onClick={() => setManaging(p._id)} className="text-left font-medium hover:text-accent">
-                      {p.name}
-                    </button>
-                    <div className="text-xs text-muted">
-                      {p.unit}
-                      {vendorName(p.vendor) ? ` · ${vendorName(p.vendor)}` : ""}
-                    </div>
-                  </td>
-                  <td className={`${td} text-muted`}>{categoryName(p.category, categories)}</td>
-                  {!singleWarehouse && (
-                    <td className={td}>
-                      {w ? (
-                        <Link href={`/modules/stock/warehouses/${w._id}`} className="hover:text-accent hover:underline">
-                          {warehouseLabel(w)}
-                        </Link>
-                      ) : (
-                        <span className="text-muted">No warehouse</span>
-                      )}
-                    </td>
-                  )}
-                  <td className={`${td} text-right tabular-nums`}>{new Intl.NumberFormat("en-IN").format(p.no_of_item)}</td>
-                  <td className={`${td} text-right`}>
-                    <Count n={available(p)} tone="accent" />
-                  </td>
-                  <td className={`${td} text-right`}>
-                    <Count n={p.out_for_exhibition} />
-                  </td>
-                  <td className={`${td} text-right`}>
-                    <Count n={p.repair_item} tone="warn" />
-                  </td>
-                  <td className={`${td} text-right`}>
-                    <Count n={p.lost} tone="danger" />
-                  </td>
-                  <td className={`${td} text-right`}>
-                    <Count n={p.dead} tone="danger" />
-                  </td>
-                  <td className={`${td} text-right`}>
-                    <button
-                      type="button"
-                      onClick={() => setManaging(p._id)}
-                      className="inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-sm font-medium text-accent hover:bg-accent-soft"
-                    >
-                      Manage
-                      <ChevronRight className="size-4" aria-hidden />
-                    </button>
-                  </td>
+      <Paged items={rows} resetKey={`${search}|${warehouse}|${category}|${status}`}>
+        {(pageRows) => (
+          <TableWrap>
+            <table className="w-full text-sm">
+              <thead className="border-b border-line bg-surface-2/50">
+                <tr>
+                  <th className={th}>Product</th>
+                  <th className={th}>Category</th>
+                  {!singleWarehouse && <th className={th}>Warehouse</th>}
+                  <th className={`${th} text-right`}>Total</th>
+                  <th className={`${th} text-right`}>On shelf</th>
+                  <th className={`${th} text-right`}>Out</th>
+                  <th className={`${th} text-right`}>Repair</th>
+                  <th className={`${th} text-right`}>Lost</th>
+                  <th className={`${th} text-right`}>Dead</th>
+                  <th className={th}>
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {rows.length === 0 && (
-          <p className="px-4 py-10 text-center text-sm text-muted">
-            {products.length === 0 ? "No products yet." : "No products match these filters."}
-          </p>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {pageRows.map((p) => {
+                  const w = p.warehouse ? byId.get(p.warehouse) : undefined;
+                  return (
+                    <tr key={p._id} className="hover:bg-surface-2/40">
+                      <td className={td}>
+                        <button type="button" onClick={() => setManaging(p._id)} className="text-left font-medium hover:text-accent">
+                          {p.name}
+                        </button>
+                        <div className="text-xs text-muted">
+                          {p.unit}
+                          {vendorName(p.vendor) ? ` · ${vendorName(p.vendor)}` : ""}
+                        </div>
+                      </td>
+                      <td className={`${td} text-muted`}>{categoryName(p.category, categories)}</td>
+                      {!singleWarehouse && (
+                        <td className={td}>
+                          {w ? (
+                            <Link href={`/modules/stock/warehouses/${w._id}`} className="hover:text-accent hover:underline">
+                              {warehouseLabel(w)}
+                            </Link>
+                          ) : (
+                            <span className="text-muted">No warehouse</span>
+                          )}
+                        </td>
+                      )}
+                      <td className={`${td} text-right tabular-nums`}>{new Intl.NumberFormat("en-IN").format(p.no_of_item)}</td>
+                      <td className={`${td} text-right`}>
+                        <Count n={available(p)} tone="accent" />
+                      </td>
+                      <td className={`${td} text-right`}>
+                        <Count n={p.out_for_exhibition} />
+                      </td>
+                      <td className={`${td} text-right`}>
+                        <Count n={p.repair_item} tone="warn" />
+                      </td>
+                      <td className={`${td} text-right`}>
+                        <Count n={p.lost} tone="danger" />
+                      </td>
+                      <td className={`${td} text-right`}>
+                        <Count n={p.dead} tone="danger" />
+                      </td>
+                      <td className={`${td} text-right`}>
+                        <button
+                          type="button"
+                          onClick={() => setManaging(p._id)}
+                          className="inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-sm font-medium text-accent hover:bg-accent-soft"
+                        >
+                          Manage
+                          <ChevronRight className="size-4" aria-hidden />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {rows.length === 0 && (
+              <p className="px-4 py-10 text-center text-sm text-muted">
+                {products.length === 0 ? "No products yet." : "No products match these filters."}
+              </p>
+            )}
+          </TableWrap>
         )}
-      </TableWrap>
+      </Paged>
       <p className="mt-2 text-xs text-muted">
         Showing {rows.length} of {products.length} products. &ldquo;On shelf&rdquo; is what can be sent out or transferred now.
       </p>

@@ -6,6 +6,7 @@ import { CalendarDays, Mail, MapPin, Pencil, Phone, Plus, SearchX, Trash2, Walle
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
+import { Paged } from "@/components/pagination";
 import { Button } from "@/components/ui";
 import { BackLink, EmptyState, QueryState, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
 import { ApiError } from "@/lib/api";
@@ -104,72 +105,80 @@ export function VendorDetail() {
               </div>
             ) : (
               <Section title="By exhibition" description="What was paid, and what each payment was for.">
-                <TableWrap>
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-line bg-surface-2/50">
-                      <tr>
-                        <th className={th}>Exhibition</th>
-                        <th className={th}>Purposes</th>
-                        <th className={`${th} text-right`}>Paid</th>
-                        <th className={th}>
-                          <span className="sr-only">Actions</span>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {sum.byExhibition.map((entry) => (
-                        <tr key={entry.exhibition_id}>
-                          <td className={`${td} font-medium`}>{entry.exhibition_name ?? "Exhibition"}</td>
-                          <td className={td}>
-                            {entry.purposes.length === 0 ? (
-                              <span className="text-muted">—</span>
-                            ) : (
-                              <div className="flex flex-wrap gap-1.5">
-                                {entry.purposes.map((p, i) => (
-                                  <span key={i} className="rounded-full border border-line bg-surface px-2 py-0.5 text-xs">
-                                    {p.purpose} <span className="font-medium">{fmtMoney(p.amount)}</span>
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </td>
-                          <td className={`${td} text-right tabular-nums`}>{fmtMoney(entry.total_amount)}</td>
-                          <td className={`${td} text-right`}>
-                            <Button variant="ghost" className="h-8 px-2.5 text-accent hover:bg-accent-soft" onClick={() => setPaying({ exhibitionId: entry.exhibition_id })}>
-                              <Plus className="size-3.5" aria-hidden />
-                              Pay
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </TableWrap>
+                <Paged items={sum.byExhibition}>
+                  {(pageRows) => (
+                    <TableWrap>
+                      <table className="w-full text-sm">
+                        <thead className="border-b border-line bg-surface-2/50">
+                          <tr>
+                            <th className={th}>Exhibition</th>
+                            <th className={th}>Purposes</th>
+                            <th className={`${th} text-right`}>Paid</th>
+                            <th className={th}>
+                              <span className="sr-only">Actions</span>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                          {pageRows.map((entry) => (
+                            <tr key={entry.exhibition_id}>
+                              <td className={`${td} font-medium`}>{entry.exhibition_name ?? "Exhibition"}</td>
+                              <td className={td}>
+                                {entry.purposes.length === 0 ? (
+                                  <span className="text-muted">—</span>
+                                ) : (
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {entry.purposes.map((p, i) => (
+                                      <span key={i} className="rounded-full border border-line bg-surface px-2 py-0.5 text-xs">
+                                        {p.purpose} <span className="font-medium">{fmtMoney(p.amount)}</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </td>
+                              <td className={`${td} text-right tabular-nums`}>{fmtMoney(entry.total_amount)}</td>
+                              <td className={`${td} text-right`}>
+                                <Button variant="ghost" className="h-8 px-2.5 text-accent hover:bg-accent-soft" onClick={() => setPaying({ exhibitionId: entry.exhibition_id })}>
+                                  <Plus className="size-3.5" aria-hidden />
+                                  Pay
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </TableWrap>
+                  )}
+                </Paged>
               </Section>
             )}
 
             {v.transactions && v.transactions.length > 0 && (
               <Section title="Recent payments">
-                <TableWrap>
-                  <table className="w-full text-sm">
-                    <thead className="border-b border-line bg-surface-2/50">
-                      <tr>
-                        <th className={th}>Exhibition</th>
-                        <th className={th}>Remark</th>
-                        <th className={`${th} text-right`}>Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {v.transactions.map((t) => (
-                        <tr key={t._id}>
-                          <td className={td}>{t.exhibition_name ?? "—"}</td>
-                          <td className={`${td} text-muted`}>{t.remark}</td>
-                          <td className={`${td} text-right tabular-nums`}>{fmtMoney(t.total_amount)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </TableWrap>
+                <Paged items={v.transactions}>
+                  {(pageRows) => (
+                    <TableWrap>
+                      <table className="w-full text-sm">
+                        <thead className="border-b border-line bg-surface-2/50">
+                          <tr>
+                            <th className={th}>Exhibition</th>
+                            <th className={th}>Remark</th>
+                            <th className={`${th} text-right`}>Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                          {pageRows.map((t) => (
+                            <tr key={t._id}>
+                              <td className={td}>{t.exhibition_name ?? "—"}</td>
+                              <td className={`${td} text-muted`}>{t.remark}</td>
+                              <td className={`${td} text-right tabular-nums`}>{fmtMoney(t.total_amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </TableWrap>
+                  )}
+                </Paged>
               </Section>
             )}
 
