@@ -1,12 +1,22 @@
 "use client";
 
-import { Plus, Receipt, SearchX, Wallet } from "lucide-react";
+import { Pencil, Plus, Receipt, SearchX, Trash2, Wallet } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { ConfirmDialog } from "@/components/modal";
 import { Button } from "@/components/ui";
 import { BackLink, EmptyNote, EmptyState, QueryState, Section, StatTile, TableWrap, td, th } from "@/components/data-ui";
+import { useMe } from "@/hooks/use-me";
 import { ApiError } from "@/lib/api";
-import { fmtDate, fmtMoney, useFinanceVendorDetails } from "@/lib/finance-vendors";
+import {
+  deleteFinanceVendorPayment,
+  fmtDate,
+  fmtMoney,
+  useFinanceVendorDetails,
+  useFinanceVendorsMutation,
+  type PaymentEntry,
+} from "@/lib/finance-vendors";
+import { mayDelete } from "@/lib/permissions";
 import { TaxableEntryDialog } from "../_components/taxable-entry-dialog";
 import { VendorPaymentDialog } from "../_components/vendor-payment-dialog";
 
@@ -16,6 +26,10 @@ export function FinanceVendorDetail() {
 
   const [addingEntry, setAddingEntry] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [correcting, setCorrecting] = useState<PaymentEntry | null>(null);
+  const [deleting, setDeleting] = useState<PaymentEntry | null>(null);
+  const me = useMe().data;
+  const remove = useFinanceVendorsMutation(deleteFinanceVendorPayment);
 
   if (details.error instanceof ApiError && [400, 404].includes(details.error.status)) {
     return (
@@ -112,6 +126,9 @@ export function FinanceVendorDetail() {
                       <tr>
                         <th className={th}>Date</th>
                         <th className={`${th} text-right`}>Amount</th>
+                        <th className={th}>
+                          <span className="sr-only">Actions</span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-line">
@@ -119,6 +136,23 @@ export function FinanceVendorDetail() {
                         <tr key={p._id}>
                           <td className={`${td} text-muted`}>{fmtDate(p.paidDate)}</td>
                           <td className={`${td} text-right tabular-nums font-medium text-success`}>{fmtMoney(p.paidAmount)}</td>
+                          <td className={`${td} text-right`}>
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" className="h-8 px-2" onClick={() => setCorrecting(p)} aria-label={`Correct payment of ${fmtMoney(p.paidAmount)}`}>
+                                <Pencil className="size-3.5" aria-hidden />
+                              </Button>
+                              {me && mayDelete(me, p.createdBy) && (
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 px-2 hover:text-danger"
+                                  onClick={() => setDeleting(p)}
+                                  aria-label={`Delete payment of ${fmtMoney(p.paidAmount)}`}
+                                >
+                                  <Trash2 className="size-3.5" aria-hidden />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -128,7 +162,30 @@ export function FinanceVendorDetail() {
             </Section>
 
             <TaxableEntryDialog open={addingEntry} onClose={() => setAddingEntry(false)} vendorId={vendorId} vendorName={d.vendor?.vendorName} />
-            <VendorPaymentDialog open={paying} onClose={() => setPaying(false)} vendorId={vendorId} remainingBalance={d.summary.remainingBalance} />
+            <VendorPaymentDialog
+              open={paying || Boolean(correcting)}
+              onClose={() => {
+                setPaying(false);
+                setCorrecting(null);
+              }}
+              vendorId={vendorId}
+              remainingBalance={d.summary.remainingBalance}
+              payment={correcting}
+            />
+            <ConfirmDialog
+              open={Boolean(deleting)}
+              title={`Delete this payment of ${fmtMoney(deleting?.paidAmount)}?`}
+              confirmLabel="Delete payment"
+              pending={remove.isPending}
+              error={remove.error?.message}
+              onClose={() => {
+                setDeleting(null);
+                remove.reset();
+              }}
+              onConfirm={() => deleting && remove.mutate({ vendorId, paymentId: deleting._id }, { onSuccess: () => setDeleting(null) })}
+            >
+              Paid on {fmtDate(deleting?.paidDate)}. Its amount goes back to the remaining GST balance. This can&apos;t be undone.
+            </ConfirmDialog>
           </>
         );
       }}

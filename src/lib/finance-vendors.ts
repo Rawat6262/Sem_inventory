@@ -24,7 +24,7 @@ export type FinanceVendorListItem = {
 };
 
 export type TaxableEntry = { _id: string; taxableAmount: number; rate: number; gst: number; date: string };
-export type PaymentEntry = { _id: string; paidAmount: number; paidDate: string };
+export type PaymentEntry = { _id: string; paidAmount: number; paidDate: string; createdBy?: string | null };
 
 export type FinanceVendorDetails = {
   vendor: Vendor;
@@ -36,8 +36,10 @@ export type FinanceVendorDetails = {
 const numberFormat = new Intl.NumberFormat("en-IN");
 export const fmt = (n: number | null | undefined) => numberFormat.format(n ?? 0);
 
+// GST often isn't a whole number of rupees, so paise are shown when there are any.
 const moneyFormat = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
-export const fmtMoney = (n: number | null | undefined) => moneyFormat.format(n ?? 0);
+const paiseFormat = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const fmtMoney = (n: number | null | undefined) => (Math.round((n ?? 0) * 100) % 100 ? paiseFormat : moneyFormat).format(n ?? 0);
 
 const dateFormat = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" });
 export const fmtDate = (d: string | null | undefined) => (d ? dateFormat.format(new Date(d)) : "—");
@@ -80,3 +82,10 @@ export const addTaxableEntry = (body: TaxableEntryInput) => api("createFinanceVe
 export type VendorPaymentInput = { vendorId: string; paidAmount: number; paidDate: string };
 export const addFinanceVendorPayment = ({ vendorId, ...body }: VendorPaymentInput) =>
   api(`addVendorPayment/payment/${vendorId}`, { method: "PUT", body });
+
+/** Fix a payment that was recorded wrong. The ledger's totals are worked out again. */
+export const updateFinanceVendorPayment = ({ vendorId, paymentId, ...body }: VendorPaymentInput & { paymentId: string }) =>
+  api(`financeVendorPayment/${vendorId}/${paymentId}`, { method: "PUT", body });
+
+export const deleteFinanceVendorPayment = ({ vendorId, paymentId }: { vendorId: string; paymentId: string }) =>
+  api(`financeVendorPayment/${vendorId}/${paymentId}`, { method: "DELETE" });

@@ -68,7 +68,7 @@ function TaxableEntryForm({ vendorId, excludeVendorIds, onDone }: { vendorId?: s
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_8rem]">
         <Field label="Taxable amount">
-          {(id) => <Input id={id} type="number" inputMode="numeric" required min={1} value={taxableAmount} onChange={(e) => setTaxableAmount(e.target.value)} />}
+          {(id) => <Input id={id} type="number" inputMode="decimal" required min={0.01} step={0.01} value={taxableAmount} onChange={(e) => setTaxableAmount(e.target.value)} />}
         </Field>
         <Field label="GST rate %" hint="0 to 18">
           {(id) => (
