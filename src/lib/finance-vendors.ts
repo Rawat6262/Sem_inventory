@@ -23,7 +23,7 @@ export type FinanceVendorListItem = {
   totalPayments: number;
 };
 
-export type TaxableEntry = { _id: string; taxableAmount: number; rate: number; gst: number; date: string };
+export type TaxableEntry = { _id: string; taxableAmount: number; rate: number; gst: number; date: string; createdBy?: string | null };
 export type PaymentEntry = { _id: string; paidAmount: number; paidDate: string; createdBy?: string | null };
 
 export type FinanceVendorDetails = {
@@ -82,6 +82,14 @@ export const addTaxableEntry = (body: TaxableEntryInput) => api("createFinanceVe
 export type VendorPaymentInput = { vendorId: string; paidAmount: number; paidDate: string };
 export const addFinanceVendorPayment = ({ vendorId, ...body }: VendorPaymentInput) =>
   api(`addVendorPayment/payment/${vendorId}`, { method: "PUT", body });
+
+/** Fix an entry that was added wrong. Refused when it would leave less GST payable than was paid. */
+export const updateTaxableEntry = ({ vendor, entryId, ...body }: TaxableEntryInput & { entryId: string }) =>
+  api(`financeVendorEntry/${vendor}/${entryId}`, { method: "PUT", body });
+
+/** Deleting the last entry of a ledger with no payments deletes the ledger too. */
+export const deleteTaxableEntry = ({ vendorId, entryId }: { vendorId: string; entryId: string }) =>
+  api(`financeVendorEntry/${vendorId}/${entryId}`, { method: "DELETE" });
 
 /** Fix a payment that was recorded wrong. The ledger's totals are worked out again. */
 export const updateFinanceVendorPayment = ({ vendorId, paymentId, ...body }: VendorPaymentInput & { paymentId: string }) =>

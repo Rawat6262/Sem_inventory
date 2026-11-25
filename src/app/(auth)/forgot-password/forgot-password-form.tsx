@@ -66,7 +66,8 @@ export function ForgotPasswordForm() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Password changed</h1>
         <p className="mt-1 text-sm text-muted">You&apos;ve been logged out on every device. Log in with your new password.</p>
-        <Link href="/login" className="mt-8 inline-flex h-10 w-full items-center justify-center rounded-lg bg-accent text-sm font-medium text-accent-ink hover:opacity-90">
+        {/* The page stays mounted in the background: start fresh next time. */}
+        <Link href="/login" onClick={() => setStep("request")} className="mt-8 inline-flex h-10 w-full items-center justify-center rounded-lg bg-accent text-sm font-medium text-accent-ink hover:opacity-90">
           Go to log in
         </Link>
       </div>

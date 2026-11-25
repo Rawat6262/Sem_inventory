@@ -10,11 +10,13 @@ import { useMe } from "@/hooks/use-me";
 import { ApiError } from "@/lib/api";
 import {
   deleteFinanceVendorPayment,
+  deleteTaxableEntry,
   fmtDate,
   fmtMoney,
   useFinanceVendorDetails,
   useFinanceVendorsMutation,
   type PaymentEntry,
+  type TaxableEntry,
 } from "@/lib/finance-vendors";
 import { mayDelete } from "@/lib/permissions";
 import { TaxableEntryDialog } from "../_components/taxable-entry-dialog";
@@ -28,7 +30,10 @@ export function FinanceVendorDetail() {
   const [paying, setPaying] = useState(false);
   const [correcting, setCorrecting] = useState<PaymentEntry | null>(null);
   const [deleting, setDeleting] = useState<PaymentEntry | null>(null);
+  const [correctingEntry, setCorrectingEntry] = useState<TaxableEntry | null>(null);
+  const [deletingEntry, setDeletingEntry] = useState<TaxableEntry | null>(null);
   const me = useMe().data;
+  const removeEntry = useFinanceVendorsMutation(deleteTaxableEntry);
   const remove = useFinanceVendorsMutation(deleteFinanceVendorPayment);
 
   if (details.error instanceof ApiError && [400, 404].includes(details.error.status)) {
@@ -99,6 +104,9 @@ export function FinanceVendorDetail() {
                         <th className={`${th} text-right`}>Taxable amount</th>
                         <th className={`${th} text-right`}>Rate</th>
                         <th className={`${th} text-right`}>GST</th>
+                        <th className={th}>
+                          <span className="sr-only">Actions</span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-line">
@@ -108,6 +116,23 @@ export function FinanceVendorDetail() {
                           <td className={`${td} text-right tabular-nums`}>{fmtMoney(e.taxableAmount)}</td>
                           <td className={`${td} text-right tabular-nums`}>{e.rate}%</td>
                           <td className={`${td} text-right tabular-nums font-medium`}>{fmtMoney(e.gst)}</td>
+                          <td className={`${td} text-right`}>
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" className="h-8 px-2" onClick={() => setCorrectingEntry(e)} aria-label={`Correct entry of ${fmtMoney(e.taxableAmount)}`}>
+                                <Pencil className="size-3.5" aria-hidden />
+                              </Button>
+                              {me && mayDelete(me, e.createdBy) && (
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 px-2 hover:text-danger"
+                                  onClick={() => setDeletingEntry(e)}
+                                  aria-label={`Delete entry of ${fmtMoney(e.taxableAmount)}`}
+                                >
+                                  <Trash2 className="size-3.5" aria-hidden />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -161,7 +186,33 @@ export function FinanceVendorDetail() {
               )}
             </Section>
 
-            <TaxableEntryDialog open={addingEntry} onClose={() => setAddingEntry(false)} vendorId={vendorId} vendorName={d.vendor?.vendorName} />
+            <TaxableEntryDialog
+              open={addingEntry || Boolean(correctingEntry)}
+              onClose={() => {
+                setAddingEntry(false);
+                setCorrectingEntry(null);
+              }}
+              vendorId={vendorId}
+              vendorName={d.vendor?.vendorName}
+              entry={correctingEntry}
+            />
+            <ConfirmDialog
+              open={Boolean(deletingEntry)}
+              title={`Delete this taxable entry of ${fmtMoney(deletingEntry?.taxableAmount)}?`}
+              confirmLabel="Delete entry"
+              pending={removeEntry.isPending}
+              error={removeEntry.error?.message}
+              onClose={() => {
+                setDeletingEntry(null);
+                removeEntry.reset();
+              }}
+              onConfirm={() => deletingEntry && removeEntry.mutate({ vendorId, entryId: deletingEntry._id }, { onSuccess: () => setDeletingEntry(null) })}
+            >
+              {d.taxableHistory.length === 1 && d.paymentHistory.length === 0
+                ? "It's the only entry, so this vendor's GST ledger is deleted too."
+                : `Its GST of ${fmtMoney(deletingEntry?.gst)} is taken off the GST payable.`}{" "}
+              This can&apos;t be undone.
+            </ConfirmDialog>
             <VendorPaymentDialog
               open={paying || Boolean(correcting)}
               onClose={() => {

@@ -67,9 +67,9 @@ function IncomingChallanForm({ onDone }: { onDone: () => void }) {
 
   const pendingItems = useMemo(() => pending.data?.items.filter((i) => i.pending_quantity > 0) ?? [], [pending.data]);
 
-  // (Re)build the editable rows whenever the pending list for this
-  // warehouse+exhibition changes, keeping any quantities already typed.
-  const rowsKey = pendingItems.map((i) => i.product_id).join(",");
+  // (Re)build the editable rows whenever the warehouse, the exhibition or what's
+  // pending there changes: the same products can be pending in other numbers.
+  const rowsKey = [warehouseId, exhibitionId, ...pendingItems.map((i) => `${i.product_id}:${i.pending_quantity}`)].join(",");
   const [lastRowsKey, setLastRowsKey] = useState("");
   if (rowsKey !== lastRowsKey) {
     setLastRowsKey(rowsKey);

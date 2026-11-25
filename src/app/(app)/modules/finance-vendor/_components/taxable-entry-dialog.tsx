@@ -2,8 +2,16 @@
 
 import { useState } from "react";
 import { Modal } from "@/components/modal";
-import { Alert, Button, Field, Input, Select } from "@/components/ui";
-import { addTaxableEntry, fmtMoney, GST_RATES, useFinanceVendorsMutation, type TaxableEntryInput } from "@/lib/finance-vendors";
+import { Alert, Button, Field, Input, Select, todayInput } from "@/components/ui";
+import {
+  addTaxableEntry,
+  fmtMoney,
+  GST_RATES,
+  updateTaxableEntry,
+  useFinanceVendorsMutation,
+  type TaxableEntry,
+  type TaxableEntryInput,
+} from "@/lib/finance-vendors";
 import { useVendors } from "@/lib/vendors";
 
 type Props = {
@@ -14,32 +22,30 @@ type Props = {
   vendorName?: string;
   /** Vendors who already have a ledger — hidden from the picker when adding fresh. */
   excludeVendorIds?: string[];
+  /** Correct this entry (needs vendorId); adds a new one otherwise. */
+  entry?: TaxableEntry | null;
 };
 
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-export function TaxableEntryDialog({ open, onClose, vendorId, vendorName, excludeVendorIds }: Props) {
+export function TaxableEntryDialog({ open, onClose, vendorId, vendorName, excludeVendorIds, entry }: Props) {
   return (
-    <Modal open={open} onClose={onClose} title="Add taxable entry" description={vendorName}>
-      {open && <TaxableEntryForm vendorId={vendorId} excludeVendorIds={excludeVendorIds} onDone={onClose} />}
+    <Modal open={open} onClose={onClose} title={entry ? "Correct taxable entry" : "Add taxable entry"} description={vendorName}>
+      {open && <TaxableEntryForm key={entry?._id ?? "new"} vendorId={vendorId} excludeVendorIds={excludeVendorIds} entry={entry} onDone={onClose} />}
     </Modal>
   );
 }
 
-function TaxableEntryForm({ vendorId, excludeVendorIds, onDone }: { vendorId?: string; excludeVendorIds?: string[]; onDone: () => void }) {
+function TaxableEntryForm({ vendorId, excludeVendorIds, entry, onDone }: Pick<Props, "vendorId" | "excludeVendorIds" | "entry"> & { onDone: () => void }) {
   const vendors = useVendors();
   const [vendor, setVendor] = useState(vendorId ?? "");
-  const [taxableAmount, setTaxableAmount] = useState("");
-  const [rate, setRate] = useState("18");
-  const [date, setDate] = useState(today());
-  const save = useFinanceVendorsMutation((input: TaxableEntryInput) => addTaxableEntry(input));
+  const [taxableAmount, setTaxableAmount] = useState(entry ? String(entry.taxableAmount) : "");
+  const [rate, setRate] = useState(entry ? String(entry.rate) : "18");
+  const [date, setDate] = useState(entry ? entry.date.slice(0, 10) : todayInput());
+  const save = useFinanceVendorsMutation((input: TaxableEntryInput) => (entry ? updateTaxableEntry({ ...input, entryId: entry._id }) : addTaxableEntry(input)));
 
   const amt = Number(taxableAmount);
   const r = Number(rate);
   const gst = amt > 0 && r >= 0 ? (amt * r) / 100 : 0;
-  const valid = Boolean(vendor) && amt > 0 && r >= 0 && r <= 18 && Boolean(date);
+  const valid = Boolean(vendor) && amt > 0 && rate !== "" && r >= 0 && r <= 18 && Boolean(date);
 
   const available = vendorId ? null : (vendors.data ?? []).filter((v) => !excludeVendorIds?.includes(v._id));
 
@@ -72,7 +78,7 @@ function TaxableEntryForm({ vendorId, excludeVendorIds, onDone }: { vendorId?: s
         </Field>
         <Field label="GST rate %" hint="0 to 18">
           {(id) => (
-            <Input id={id} type="number" inputMode="numeric" required min={0} max={18} list="gst-rates" value={rate} onChange={(e) => setRate(e.target.value)} />
+            <Input id={id} type="number" inputMode="decimal" required min={0} max={18} step={0.01} list="gst-rates" value={rate} onChange={(e) => setRate(e.target.value)} />
           )}
         </Field>
       </div>
@@ -93,7 +99,7 @@ function TaxableEntryForm({ vendorId, excludeVendorIds, onDone }: { vendorId?: s
           Cancel
         </Button>
         <Button type="submit" loading={save.isPending} disabled={!valid}>
-          Add entry
+          {entry ? "Save correction" : "Add entry"}
         </Button>
       </div>
     </form>

@@ -24,6 +24,7 @@ export function LoginForm() {
     setLoading(true);
     try {
       const { user } = await authApi<{ user: Me }>("login", { method: "POST", body: { gmail: gmail.trim(), password } });
+      queryClient.clear(); // nothing from an earlier login in this tab
       queryClient.setQueryData(ME_KEY, user);
       setPassword("");
       router.replace(safeNext(new URLSearchParams(window.location.search).get("next")));

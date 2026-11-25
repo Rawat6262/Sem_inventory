@@ -3,8 +3,8 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Modal } from "@/components/modal";
-import { Alert, Button, Field, Input, Select, Textarea } from "@/components/ui";
-import { useContractor, useContractors, useExhibitionsList, type DealPurpose } from "@/lib/contractors";
+import { Alert, Button, Field, Input, Select, Textarea, todayInput } from "@/components/ui";
+import { exhibitionRefId, useContractor, useContractors, useExhibitionsList, type DealPurpose } from "@/lib/contractors";
 import { useSupervisors } from "@/lib/supervisors";
 import {
   CATEGORY_LABELS,
@@ -26,13 +26,9 @@ import { useVendors } from "@/lib/vendors";
 
 type Props = { open: boolean; onClose: () => void; transaction?: Transaction | null };
 
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 export function TransactionDialog({ open, onClose, transaction }: Props) {
   return (
-    <Modal open={open} onClose={onClose} title={transaction ? "Edit transaction" : "Add transaction"} description={transaction ? undefined : "Records what's owed. Pay it separately once it's settled."}>
+    <Modal open={open} onClose={onClose} title={transaction ? "Edit transaction" : "Add transaction"} description={transaction ? undefined : "Records money already paid."}>
       {open && <TransactionForm key={transaction?._id ?? "new"} transaction={transaction} onDone={onClose} />}
     </Modal>
   );
@@ -61,7 +57,7 @@ function TransactionForm({ transaction, onDone }: { transaction?: Transaction | 
   const [paymentMode, setPaymentMode] = useState<PaymentMode>((transaction?.payment_mode as PaymentMode) ?? "cash");
   const [vehicleNumber, setVehicleNumber] = useState(transaction?.vehicle_number ?? "");
   const [remark, setRemark] = useState(transaction?.remark ?? "");
-  const [date, setDate] = useState(transaction ? transaction.transaction_date.slice(0, 10) : today());
+  const [date, setDate] = useState(transaction ? transaction.transaction_date.slice(0, 10) : todayInput());
 
   const create = useTransactionsMutation((input: NewTransactionInput) => createTransaction(input));
   const update = useTransactionsMutation((input: EditTransactionInput) => updateTransaction(input));
@@ -139,7 +135,16 @@ function TransactionForm({ transaction, onDone }: { transaction?: Transaction | 
           </Field>
           <Field label="Exhibition">
             {(id) => (
-              <Select id={id} required value={exhibitionId} onChange={(e) => setExhibitionId(e.target.value)} disabled={exhibitions.isPending}>
+              <Select
+                id={id}
+                required
+                value={exhibitionId}
+                onChange={(e) => {
+                  setExhibitionId(e.target.value);
+                  setStallId(""); // it belonged to the other exhibition
+                }}
+                disabled={exhibitions.isPending}
+              >
                 <option value="">{exhibitions.isPending ? "Loading…" : "Select exhibition"}</option>
                 {exhibitions.data?.map((ex) => (
                   <option key={ex._id} value={ex._id}>
@@ -151,7 +156,14 @@ function TransactionForm({ transaction, onDone }: { transaction?: Transaction | 
             )}
           </Field>
 
-          <EntityPicker category={category} value={entityId} onChange={setEntityId} />
+          <EntityPicker
+            category={category}
+            value={entityId}
+            onChange={(id) => {
+              setEntityId(id);
+              setStallId(""); // it belonged to the other contractor
+            }}
+          />
 
           {category === "labour" && entityId && exhibitionId && (
             <StallPicker labourId={entityId} exhibitionId={exhibitionId} value={stallId} onChange={setStallId} />
@@ -305,7 +317,7 @@ function EntityPicker({ category, value, onChange }: { category: TransactionCate
 
 function StallPicker({ labourId, exhibitionId, value, onChange }: { labourId: string; exhibitionId: string; value: string; onChange: (v: string) => void }) {
   const contractor = useContractor(labourId);
-  const entry = contractor.data?.exhibition.find((e) => (typeof e.exhibition === "object" ? e.exhibition._id : e.exhibition) === exhibitionId);
+  const entry = contractor.data?.exhibition.find((e) => exhibitionRefId(e.exhibition) === exhibitionId);
   const stalls = entry?.stalls.filter((s) => s.remaining_amount > 0) ?? [];
 
   return (

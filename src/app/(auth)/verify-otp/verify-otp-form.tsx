@@ -35,6 +35,7 @@ export function VerifyOtpForm() {
         body: { gmail: gmail.trim().toLowerCase(), otp: otp.trim() },
       });
       clearPendingEmail();
+      queryClient.clear(); // nothing from an earlier login in this tab
       queryClient.setQueryData(ME_KEY, user);
       if (mustResetPassword) setMustReset(true);
       else router.replace("/");
@@ -51,8 +52,9 @@ export function VerifyOtpForm() {
     setNotice(null);
     setResending(true);
     try {
-      await api("resendotp", { method: "POST", body: { gmail: gmail.trim().toLowerCase() } });
-      setNotice("A new code has been sent. Codes expire after 5 minutes.");
+      const { message } = await api<{ message?: string }>("resendotp", { method: "POST", body: { gmail: gmail.trim().toLowerCase() } });
+      // Says so when a code from a minute ago is still the one to use.
+      setNotice(message?.includes("less than a minute") ? message : "A new code has been sent. Codes expire after 5 minutes.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not resend the code");
     } finally {

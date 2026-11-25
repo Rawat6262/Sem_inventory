@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Modal } from "@/components/modal";
-import { Alert, Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { Alert, Button, Field, Input, Select, Textarea, todayInput } from "@/components/ui";
 import { addLeaveDate, LEAVE_TYPES, useEmployeesMutation, type AddLeaveInput, type LeaveType } from "@/lib/employees";
 
 type Props = { open: boolean; onClose: () => void; employeeId: string; month: number; year: number };
@@ -16,7 +16,7 @@ function monthBounds(month: number, year: number) {
 
 function defaultDate(month: number, year: number) {
   const today = new Date();
-  if (today.getMonth() + 1 === month && today.getFullYear() === year) return today.toISOString().slice(0, 10);
+  if (today.getMonth() + 1 === month && today.getFullYear() === year) return todayInput();
   return `${year}-${String(month).padStart(2, "0")}-01`;
 }
 

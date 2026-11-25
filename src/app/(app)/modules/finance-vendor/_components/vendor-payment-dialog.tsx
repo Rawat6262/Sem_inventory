@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Modal } from "@/components/modal";
-import { Alert, Button, Field, Input } from "@/components/ui";
+import { Alert, Button, Field, Input, todayInput } from "@/components/ui";
 import {
   addFinanceVendorPayment,
   fmtMoney,
@@ -20,10 +20,6 @@ type Props = {
   payment?: PaymentEntry | null; // correct this one when set, record a new one otherwise
 };
 
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 export function VendorPaymentDialog({ open, onClose, vendorId, remainingBalance, payment }: Props) {
   return (
     <Modal open={open} onClose={onClose} title={payment ? "Correct a GST payment" : "Record a GST payment"}>
@@ -34,7 +30,7 @@ export function VendorPaymentDialog({ open, onClose, vendorId, remainingBalance,
 
 function PaymentForm({ vendorId, remainingBalance, payment, onDone }: Omit<Props, "open" | "onClose"> & { onDone: () => void }) {
   const [amount, setAmount] = useState(payment ? String(payment.paidAmount) : "");
-  const [date, setDate] = useState(payment ? payment.paidDate.slice(0, 10) : today());
+  const [date, setDate] = useState(payment ? payment.paidDate.slice(0, 10) : todayInput());
   const pay = useFinanceVendorsMutation((input: VendorPaymentInput) =>
     payment ? updateFinanceVendorPayment({ ...input, paymentId: payment._id }) : addFinanceVendorPayment(input),
   );

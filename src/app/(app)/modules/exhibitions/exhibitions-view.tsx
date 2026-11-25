@@ -4,7 +4,7 @@ import { ChevronRight, MapPin, Plus, Tent, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/modal";
-import { Button } from "@/components/ui";
+import { Button, todayInput } from "@/components/ui";
 import {
   EmptyState,
   QueryState,
@@ -35,21 +35,20 @@ export function ExhibitionsView() {
   const me = useMe().data;
   const manage = Boolean(me && canManageExhibitions(me.role));
   const showClients = Boolean(me && canOpen(me.role, "client", me.extraModules, me.removedModules));
-  const [now] = useState(() => Date.now());
+  // Whole days: an exhibition is ongoing from its first day to the end of its last.
+  const [today] = useState(todayInput);
 
   const counts = useMemo(() => {
     const list = exhibitions.data ?? [];
     return {
       total: list.length,
-      upcoming: list.filter((e) => new Date(e.startDate).getTime() > now)
-        .length,
+      upcoming: list.filter((e) => e.startDate.slice(0, 10) > today).length,
       ongoing: list.filter(
         (e) =>
-          new Date(e.startDate).getTime() <= now &&
-          new Date(e.endDate).getTime() >= now,
+          e.startDate.slice(0, 10) <= today && e.endDate.slice(0, 10) >= today,
       ).length,
     };
-  }, [exhibitions.data, now]);
+  }, [exhibitions.data, today]);
 
   const q = search.trim().toLowerCase();
   const list = (exhibitions.data ?? []).filter(
